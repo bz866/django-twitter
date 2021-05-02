@@ -12,17 +12,17 @@ from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 
 class UserViewSet(viewsets.ViewSet):
-    serializer_class = UserSerializer()
+    serializer_class = UserSerializer
     permission_classes = [AllowAny,]
-    query_set = User.objects.all()
+    queryset = User.objects.all()
 
 class AccountViewSet(viewsets.ModelViewSet):
     serializer_class = SignUpSerializer
     permission_classes = [AllowAny,]
 
-    @action(method=['POST'], detail=False)
+    @action(methods=['POST'], detail=False)
     def signup(self, request):
-        serializer = SignUpSerializer
+        serializer = SignUpSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({
                 "success": False,
@@ -38,9 +38,9 @@ class AccountViewSet(viewsets.ModelViewSet):
             "user": UserSerializer(instance=user).data
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(method=['POST'], detail=False)
+    @action(methods=['POST'], detail=False)
     def login(self, request):
-        serializer = LoginSerializer
+        serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({
                 "success": False,
@@ -65,7 +65,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             "user": UserSerializer(instance=user).data,
         }, status=status.HTTP_200_OK)
 
-    @action(method=['POST'], detail=False)
+    @action(methods=['POST'], detail=False)
     def logout(self, request):
         if request.user.is_authenticated:
             django_logout(request)
@@ -73,7 +73,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             "success": True,
         }, status=status.HTTP_200_OK)
 
-    @action(method=['GET'], detail=False)
+    @action(methods=['GET'], detail=False)
     def login_status(self, request):
         user = request.user
         if not user or user.is_anonymous:
