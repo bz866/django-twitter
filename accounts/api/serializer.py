@@ -26,14 +26,14 @@ class SignUpSerializer(serializers.ModelSerializer):
         attrs['email'] = attrs['email'].lower()
         # username occupied
         if User.objects.filter(username=attrs['username']).exists():
-            return exceptions.ValidationError({
+            raise exceptions.ValidationError({
                 "username": [
                     "This username has been occupied."
                 ],
             })
         # email occupied
-        if User.objects.filter(email=attrs['email']).exists():
-            return exceptions.ValidationError({
+        elif User.objects.filter(email=attrs['email']).exists():
+            raise exceptions.ValidationError({
                 "email": [
                     "This email has been occupied."
                 ],
@@ -61,7 +61,7 @@ class LoginSerializer(serializers.Serializer):
         attrs['username'] = attrs['username'].lower()
         attrs['email'] = attrs['email'].lower()
         if not User.objects.filter(attrs['username']).exists():
-            return exceptions.ValidationError({
+            raise exceptions.ValidationError({
                 "username": [
                     "User name not exist"
                 ],
