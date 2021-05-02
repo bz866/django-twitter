@@ -2,11 +2,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth import (
     login as django_login,
     logout as django_logout,
-    authenticate as django_authenticate
 )
 from rest_framework import exceptions, status
 from rest_framework import viewsets
-from accounts.api.serializer import UserSerializer, SignUpSerializer, LoginSerializer
+from accounts.api.serializer import (
+    UserSerializer,
+    SignUpSerializer,
+    LoginSerializer,
+)
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
@@ -36,7 +39,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response({
             "success": True,
             "user": UserSerializer(instance=user).data
-        }, status=status.HTTP_400_BAD_REQUEST)
+        }, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=False)
     def login(self, request):
