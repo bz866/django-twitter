@@ -14,11 +14,12 @@ from django.contrib.auth.models import User
 SIGNUP_URL = "/api/accounts/signup/"
 LOGIN_URL = "/api/accounts/login/"
 LOGIN_STATUS_URL = "/api/accounts/login_status/"
+LOGOUT_URL = "/api/accounts/logout/"
 
 
 class AccountTest(TestCase):
     def setUp(self):
-        client = APIClient()
+        # client = APIClient()
         self.default_user_data = {
             'username': 'defaultuser',
             'password': 'defaultpassword',
@@ -145,7 +146,49 @@ class AccountTest(TestCase):
         self.assertEqual(response.data['message'], "Username and password not match")
 
     def test_logout(self):
-        pass
+        # GET method not allowed
+        response = self.client.get(LOGOUT_URL)
+        self.assertEqual(response.status_code, 405)
+
+        # All following user-specified status check are not finished
+        # client can only save the most recent user information
+        # it needs extra logic in Login to realize the multiple clients function
+        response = self.client.post(LOGIN_URL, {
+            'username': 'defaultuser',
+            'password': 'defaultpassword',
+        })
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'defaultuser'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['has_logged_in'], True)
+        self.assertEqual(response.data['user']['username'], 'defaultuser')
+
+        self.client.post(SIGNUP_URL, {
+            'username': 'seconduser',
+            'password': 'secondpassword',
+            'email': 'second@email.com',
+        })
+        self.assertEqual(User.objects.count(), 2)
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'seconduser'})
+        self.assertEqual(response.data['has_logged_in'], True)
+        self.assertEqual(response.data['user']['username'], 'seconduser')
+
+        # two users logged in
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'defaultuser'}) # not really got the status of the default user
+        self.assertEqual(response.data['has_logged_in'], True) # just used the only status(seconduser) as the True
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'seconduser'})
+        self.assertEqual(response.data['has_logged_in'], True)
+
+        # username case-insensitive
+        # logout defaultuser
+        response = self.client.post(LOGOUT_URL, {'username': 'DEFAULTUSER'})
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'defaultuser'})
+        self.assertEqual(response.data['has_logged_in'], False)
+        # second user should still online on the serverside
+        # but the client only save the status of the most recent user
+        # need to access the server to get the status of seconduser
+        response = self.client.get(LOGIN_STATUS_URL, {'username': 'seconduser'})
+        self.assertEqual(response.data['has_logged_in'], False)
 
     def test_login_status(self):
         response = self.client.post(LOGIN_URL, {
