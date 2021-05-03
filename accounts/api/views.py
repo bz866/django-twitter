@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import (
     login as django_login,
     logout as django_logout,
+    authenticate as django_authenticate,
 )
 from rest_framework import exceptions, status
 from rest_framework import viewsets
@@ -47,13 +48,13 @@ class AccountViewSet(viewsets.ModelViewSet):
         if not serializer.is_valid():
             return Response({
                 "success": False,
-                "errors": serializer.errors,
+                "error": serializer.errors,
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # login
         username = serializer.validated_data['username']
         password = serializer.validated_data['password']
-        user = django_login(username, password)
+        user = django_authenticate(request, username=username, password=password)
 
         # username and password not match
         if not user or user.is_anonymous:
@@ -62,7 +63,8 @@ class AccountViewSet(viewsets.ModelViewSet):
                 "message": "Username and password not match"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # successfully login
+        # valid username and password
+        django_login(request, user)
         return Response({
             "success": True,
             "user": UserSerializer(instance=user).data,
@@ -84,7 +86,7 @@ class AccountViewSet(viewsets.ModelViewSet):
                 'has_logged_in': False,
             }, status=status.HTTP_200_OK)
 
-        elif user.is_autheticated:
+        elif user.is_authenticated:
             return Response({
                 'has_logged_in': True,
                 'user': UserSerializer(instance=user).data,

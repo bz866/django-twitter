@@ -12,17 +12,19 @@ from accounts.api.serializer import (
 from django.contrib.auth.models import User
 
 SIGNUP_URL = "/api/accounts/signup/"
+LOGIN_URL = "/api/accounts/login/"
+LOGIN_STATUS_URL = "/api/accounts/login_status/"
 
 
 class AccountTest(TestCase):
     def setUp(self):
         client = APIClient()
-        data = {
+        self.default_user_data = {
             'username': 'defaultuser',
             'password': 'defaultpassword',
             'email': 'default@email.com',
         }
-        self.create_user(data)
+        self.create_user(self.default_user_data)
 
     def create_user(self, data):
         User.objects.create_user(**data)
@@ -107,11 +109,53 @@ class AccountTest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login(self):
-        pass
+        # GET method not allowed
+        response = self.client.get(LOGIN_URL, {
+            'username': 'defaultuser',
+            'password': 'defaultpassword',
+        })
+        self.assertEqual(response.status_code, 405)
+        response = self.client.post(LOGIN_URL, {
+            'username': 'defaultuser',
+            'password': 'defaultpassword',
+        })
+        self.assertEqual(response.status_code, 200)
+
+        # username case-insensitive
+        response = self.client.post(LOGIN_URL, {
+            'username': 'DEFAULTUSER',
+            'password': 'defaultpassword',
+        })
+        self.assertEqual(response.status_code, 200)
+
+        # username not exist
+        response = self.client.post(LOGIN_URL, {
+            'username': 'userfromnowhere',
+            'password': 'passwordfromnowhere',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error']['username'], ["User name not exist"])
+
+        # username and password not match
+        response = self.client.post(LOGIN_URL, {
+            'username': 'defaultuser',
+            'password': 'wrong password',
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['message'], "Username and password not match")
 
     def test_logout(self):
         pass
 
     def test_login_status(self):
-        pass
+        response = self.client.post(LOGIN_URL, {
+            'username': 'defaultuser',
+            'password': 'defaultpassword',
+        })
+        # POST method not allowed
+        response = self.client.post(LOGIN_STATUS_URL)
+        self.assertEqual(response.status_code, 405)
+        response = self.client.get(LOGIN_STATUS_URL)
+        self.assertEqual(response.status_code, 200)
+
 
