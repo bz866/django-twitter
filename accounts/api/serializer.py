@@ -57,10 +57,9 @@ class LoginSerializer(serializers.Serializer):
     username = CharField()
     password = CharField()
 
-    def validated(self, attrs):
+    def validate(self, attrs):
         attrs['username'] = attrs['username'].lower()
-        attrs['email'] = attrs['email'].lower()
-        if not User.objects.filter(attrs['username']).exists():
+        if not User.objects.filter(username=attrs['username']).exists():
             raise exceptions.ValidationError({
                 "username": [
                     "User name not exist"
