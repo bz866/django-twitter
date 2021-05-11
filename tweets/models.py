@@ -4,7 +4,6 @@ from django.db import models
 from utils.time_helper import (
     utc_now,
 )
-from datetime import datetime
 
 
 # Create your models here.
@@ -14,12 +13,10 @@ class Tweet(models.Model):
     content = models.TextField(max_length=140)
 
     class Meta:
-        ordering = [
-            ["user", "-created_at"],
-        ]
         index_together = [
             ['user', 'created_at'],
         ]
+        ordering = ['user', '-created_at']
 
     def hours_to_now(self):
         # no timezone information from datetime.now()
