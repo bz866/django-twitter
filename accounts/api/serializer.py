@@ -10,7 +10,15 @@ class UserSerializer(serializers.Serializer):
 
     class Meta:
         model = User
-        field = ('id', 'username', 'email')
+        fields = ('id', 'username', 'email')
+
+
+class UserSerializerForTweet(serializers.Serializer):
+    username = CharField(min_length=6, max_length=20)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username')
 
 
 class SignUpSerializer(serializers.ModelSerializer):
