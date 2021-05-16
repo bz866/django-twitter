@@ -23,5 +23,5 @@ class Tweet(models.Model):
         return (utc_now() - self.created_at).seconds // 3600
 
     def __str__(self):
-        return f'{self.user} {self.created_at}: {self.content}'
+        return f'{self.created_at} {self.user}: {self.content}'
 
