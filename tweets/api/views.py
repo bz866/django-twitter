@@ -1,9 +1,10 @@
 from django.shortcuts import render
 from tweets.models import Tweet
-from tweets.api.serializers import TweetSerializer
-from rest_framework.viewsets import (
-    GenericViewSet,
+from tweets.api.serializers import (
+    TweetSerializer,
+    TweetCreateSerializer,
 )
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import (
@@ -13,8 +14,8 @@ from rest_framework.permissions import (
 
 
 # Create your views here.
-class TweetViewSet(GenericViewSet):
-    serializer_class = TweetSerializer
+class TweetViewSet(viewsets.GenericViewSet):
+    serializer_class = TweetCreateSerializer
     queryset = Tweet.objects.all()
 
     def get_permissions(self):
@@ -36,8 +37,20 @@ class TweetViewSet(GenericViewSet):
         # wrap the list of tweet contents in dict
         return Response({'tweet': serializer.data})
 
-    # def retrieve(self, request, pk):
-    #     queryset = Tweet.objects.all()
-    #     tweet = get_object_or_404(queryset, pk=pk)
-    #     serializer = TweetSerializer(tweet)
-    #     return Response(serializer.data)
+    def create(self, request):
+        serializer = TweetCreateSerializer(
+            data = request.data,
+            context = {'request': request},
+        )
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'message': "Please check the input",
+                'error': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        tweet = serializer.save()
+        return Response({
+            'success': True,
+            'tweet': TweetSerializer(tweet).data,
+        }, status=status.HTTP_201_CREATED)
