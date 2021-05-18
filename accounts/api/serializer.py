@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.fields import CharField, EmailField
 
 
-class UserSerializer(serializers.Serializer):
+class UserSerializer(serializers.ModelSerializer):
     username = CharField(min_length=6, max_length=20)
     email = EmailField()
 
@@ -13,7 +13,7 @@ class UserSerializer(serializers.Serializer):
         fields = ('id', 'username', 'email')
 
 
-class UserSerializerForTweet(serializers.Serializer):
+class UserSerializerForTweet(serializers.ModelSerializer):
     username = CharField(min_length=6, max_length=20)
 
     class Meta:

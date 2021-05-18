@@ -1,15 +1,7 @@
-from django.test import TestCase
-from django.urls import reverse
 from rest_framework.test import APIClient
-from accounts.api.views import (
-    AccountViewSet,
-    UserViewSet,
-)
-from accounts.api.serializer import (
-    UserSerializer,
-    SignUpSerializer,
-)
+from testing.testcases import TestCase
 from django.contrib.auth.models import User
+from accounts.api.serializer import UserSerializer
 
 SIGNUP_URL = "/api/accounts/signup/"
 LOGIN_URL = "/api/accounts/login/"
@@ -19,22 +11,19 @@ LOGOUT_URL = "/api/accounts/logout/"
 
 class AccountTest(TestCase):
     def setUp(self):
-        # client = APIClient()
-        self.default_user_data = {
+        self.client = APIClient()
+        default_user_data = {
             'username': 'defaultuser',
             'password': 'defaultpassword',
-            'email': 'default@email.com',
+            'email': 'defaultuser@email.com',
         }
-        self.create_user(self.default_user_data)
-
-    def create_user(self, data):
-        User.objects.create_user(**data)
+        user = self.create_user(**default_user_data)
 
     def test_sign_up_one_user(self):
         user_info = {
             'username': 'adminuser',
             'password': 'adminpassword',
-            'email': 'admin@email.com'
+            'email': 'adminuser@email.com'
         }
         # test sign up url, no GET method
         response = self.client.get(SIGNUP_URL, user_info)
@@ -74,7 +63,7 @@ class AccountTest(TestCase):
         response = self.client.post(SIGNUP_URL, {
             'username': 'defaultuser',
             'password': 'defaultpassword',
-            'email': 'default@email.com'
+            'email': 'defaultuser@email.com'
         })
         self.assertEqual(response.data['message'], "Please check input")
         self.assertEqual(response.data['error']['username'], ["This username has been occupied."])
@@ -83,7 +72,7 @@ class AccountTest(TestCase):
         response = self.client.post(SIGNUP_URL, {
             'username': 'defaultuser2',
             'password': 'defaultpassword',
-            'email': 'default@email.com'
+            'email': 'defaultuser@email.com'
         })
         self.assertEqual(response.data['message'], "Please check input")
         self.assertEqual(response.data['error']['email'], ["This email has been occupied."])
@@ -94,7 +83,7 @@ class AccountTest(TestCase):
         response = self.client.post(SIGNUP_URL, {
             'username': 'DEFAULTUSER',
             'password': 'defaultpassword',
-            'email': 'default@email.com'
+            'email': 'defaultuser@email.com'
         })
         self.assertEqual(response.data['message'], "Please check input")
         self.assertEqual(response.data['error']['username'], ["This username has been occupied."])
@@ -103,7 +92,7 @@ class AccountTest(TestCase):
         response = self.client.post(SIGNUP_URL, {
             'username': 'defaultuser',
             'password': 'defaultpassword',
-            'email': 'DEFAULT@emAil.COM'
+            'email': 'DEFAULTUSER@emAil.COM'
         })
         self.assertEqual(response.data['message'], "Please check input")
         self.assertEqual(response.data['error']['username'], ["This username has been occupied."])
@@ -165,7 +154,7 @@ class AccountTest(TestCase):
         self.client.post(SIGNUP_URL, {
             'username': 'seconduser',
             'password': 'secondpassword',
-            'email': 'second@email.com',
+            'email': 'seconduser@email.com',
         })
         self.assertEqual(User.objects.count(), 2)
         response = self.client.get(LOGIN_STATUS_URL, {'username': 'seconduser'})
