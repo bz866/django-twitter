@@ -25,7 +25,7 @@ class Friendship(models.Model):
         ]
 
         unique_together = ['from_user', 'to_user']
-        ordering = ['from_user', '-created_at']
+        ordering = ['from_user', 'to_user', '-created_at']
 
     def __str__(self):
         return f'{self.created_at} : {self.from_user} -> {self.to_user}'
