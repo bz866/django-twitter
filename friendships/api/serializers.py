@@ -5,16 +5,6 @@ from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 
 
-# class FriendshipSerializer(serializers.ModelSerializer):
-#     from_user = UserSerializerForFriendship
-#     to_user = UserSerializerForFriendship
-#     created_at = serializers.DateTimeField()
-#
-#     class Meta:
-#         model = Friendship
-#         fields = ['from_user', 'to_user', 'created_at']
-
-
 class FriendshipFollowerSerializer(serializers.ModelSerializer):
     user = UserSerializerForFriendship(source='from_user')
     created_at = serializers.DateTimeField()
@@ -55,7 +45,7 @@ class FriendshipCreateSerializer(serializers.ModelSerializer):
         # to_user not exists
         if not User.objects.filter(id=to_user_id).exists():
             raise ValidationError({
-                'to_username': [
+                'message': [
                     "to_user_id not exists."
                 ],
             })

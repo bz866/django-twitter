@@ -48,9 +48,9 @@ class FriendshipViewSet(
                 "Please check input. Query type missed.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if request.query_params['type'] not in ['follower', 'following']:
+        if request.query_params['type'] not in ['followers', 'followings']:
             return Response(
-                "Please check input. Query type need to be in ['follower', 'following]",
+                "Please check input. Query type need to be in ['followers', 'followings]",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # must specify the user_id for query
@@ -63,7 +63,7 @@ class FriendshipViewSet(
         # query friendships
         query_type = request.query_params['type']
         user_id = request.query_params['user_id']
-        if query_type == 'follower':
+        if query_type == 'followers':
             friendships = Friendship.objects.filter(to_user_id=user_id)
             serializer = FriendshipFollowerSerializer(friendships, many=True)
         else:
