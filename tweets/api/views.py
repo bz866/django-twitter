@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from tweets.models import Tweet
 from tweets.api.serializers import (
     TweetSerializer,
@@ -11,6 +10,7 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
 )
+from newsfeeds.services import NewsFeedService
 
 
 # Create your views here.
@@ -50,6 +50,7 @@ class TweetViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         tweet = serializer.save()
+        NewsFeedService.fanout_to_followers(tweet)
         return Response({
             'success': True,
             'tweet': TweetSerializer(tweet).data,
