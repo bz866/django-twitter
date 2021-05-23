@@ -19,6 +19,7 @@ class FriendshipService():
         # friendships = Friendship.objects.filter(to_user=user)
         # followers_ids= [friendship.from_user_id for friendship in friendships]
         # followers = [User.objects.filter(id=id) for id in followers_ids]
+        # followers = User.objects.filter(id__in=followers_ids)
 
         # Use prefetch in production
         # no join, no N+1 query

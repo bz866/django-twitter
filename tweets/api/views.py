@@ -50,7 +50,7 @@ class TweetViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         tweet = serializer.save()
-        NewsFeedService.fanout_to_followers(tweet)
+        NewsFeedService().fanout_to_followers(tweet)
         return Response({
             'success': True,
             'tweet': TweetSerializer(tweet).data,
