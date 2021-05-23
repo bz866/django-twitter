@@ -1,7 +1,6 @@
 from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from tweets.models import Tweet
-from accounts.api.serializer import UserSerializer
 
 LIST_URL = '/api/tweets/'
 CREATE_URL = '/api/tweets/'
