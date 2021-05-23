@@ -14,12 +14,6 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
         return [AllowAny(), ]
 
     def list(self, request):
-        if 'user_id' not in request.query_params:
-            return Response(
-                "Please check input. 'user_id' is required.",
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        queryset = NewsFeed.objects.filter(user_id=request.query_params['user_id'])
-        serializer = NewsFeedSerializer(queryset)
+        queryset = NewsFeed.objects.filter(user_id=request.user.id)
+        serializer = NewsFeedSerializer(queryset, many=True)
         return Response({'newsfeed': serializer.data})
