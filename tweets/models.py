@@ -1,4 +1,3 @@
-import django.db.models
 from django.contrib.auth.models import User
 from django.db import models
 from utils.time_helper import (
