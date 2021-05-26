@@ -2,14 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/comments/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/comments/admin.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/comments/apps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/comments/migrations/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/comments/models.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/comments/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/api/serializers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/api/tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/testing/testcases.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twitter/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/settings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,7 +51,7 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="restartRequiresConfirmation" value="false" />
-    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
   <component name="RunManager" selected="Django Server.django-twitter">
     <configuration name="Test: accounts.api.tests" type="DjangoTestsConfigurationType" temporary="true">
@@ -118,6 +119,9 @@
       <workItem from="1621089461203" duration="18720000" />
       <workItem from="1621454860190" duration="254000" />
       <workItem from="1621616513138" duration="25532000" />
+      <workItem from="1621990162426" duration="216000" />
+      <workItem from="1621990473235" duration="29000" />
+      <workItem from="1622059511371" duration="1277000" />
     </task>
     <servers />
   </component>
