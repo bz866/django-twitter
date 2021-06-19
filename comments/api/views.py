@@ -18,8 +18,8 @@ class CommentViewSet(viewsets.GenericViewSet):
     def create(self, request, *args, **kwargs):
         data = {
             'user_id': request.user.id,
-            'tweet_id': request.data['tweet_id'],
-            'content': request.data['content'],
+            'tweet_id': request.data.get('tweet_id'),
+            'content': request.data.get('content'),
         }
 
         # validate the input by CommentSerializerForCreate
@@ -33,10 +33,13 @@ class CommentViewSet(viewsets.GenericViewSet):
 
         # save validated comment
         comment = serializer.save()
-        return Response({
-            'success': True,
-            'message': 'Comment successfully created.',
-            'comment': CommentSerializer(comment).data,
-        }, status=status.HTTP_201_CREATED)
-
+        # return Response({
+        #     'success': True,
+        #     'message': 'Comment successfully created.',
+        #     'comment': CommentSerializer(comment).data,
+        # }, status=status.HTTP_201_CREATED)
+        return Response(
+            CommentSerializer(comment).data,
+            status=status.HTTP_201_CREATED
+        )
 
