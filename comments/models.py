@@ -15,4 +15,4 @@ class Comment(models.Model):
         ordering = ('tweet', '-created_at')
 
     def __str__(self):
-        return f'{self.created_at}\n Under {self.tweet}\n @{self.user}\n Comment: {self.content}'
+        return f'{self.created_at}\n Under {self.tweet_id}\n @{self.user}\n comments: {self.content}'
