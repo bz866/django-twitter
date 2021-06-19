@@ -2,15 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/comments/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/comments/admin.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/comments/apps.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/comments/migrations/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/comments/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/comments/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/twitter/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/accounts/api/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/api/serializer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twitter/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/urls.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,7 +116,8 @@
       <workItem from="1621616513138" duration="25532000" />
       <workItem from="1621990162426" duration="216000" />
       <workItem from="1621990473235" duration="29000" />
-      <workItem from="1622059511371" duration="1277000" />
+      <workItem from="1622059511371" duration="1804000" />
+      <workItem from="1624023114678" duration="5302000" />
     </task>
     <servers />
   </component>
