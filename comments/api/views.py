@@ -1,9 +1,14 @@
-from rest_framework import viewsets
-from comments.api.serializers import CommentSerializer, CommentSerializerForCreate
+from comments.api.serializers import (
+    CommentSerializer,
+    CommentSerializerForCreate,
+    CommentSerializerForUpdate,
+)
 from comments.models import Comment
+from comments.api.permissions import IsObjectOwner
+from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework import status
 
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -13,6 +18,8 @@ class CommentViewSet(viewsets.GenericViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [IsAuthenticated(),]
+        if self.action in ['update', 'destroy']:
+            return [IsAuthenticated(), IsObjectOwner(),]
         return [AllowAny(),]
 
     def create(self, request, *args, **kwargs):
@@ -37,5 +44,39 @@ class CommentViewSet(viewsets.GenericViewSet):
             CommentSerializer(comment).data,
             status=status.HTTP_201_CREATED
         )
+
+    def update(self, request, *args, **kwargs):
+        # feed the comment instance to the serializer to update
+        # if not feed instance, serializer create object
+        comment = self.get_object()
+        serializer = CommentSerializerForUpdate(
+            data=request.data,
+            instance=comment,
+        )
+        # validate the input of the update
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'message': 'Invalid Comment Update Input',
+                'error': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # save the update
+        updated_comment = serializer.save()
+        return Response(
+            CommentSerializer(updated_comment).data,
+            status=status.HTTP_201_CREATED
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        comment = self.get_object()
+        comment.delete()
+        return Response({
+            'success': True,
+        }, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
 
 
