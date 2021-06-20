@@ -7,6 +7,7 @@ class CommentAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     list_display = (
         'created_at',
+        'updated_at',
         'user',
         'tweet',
         'content',

@@ -65,7 +65,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         updated_comment = serializer.save()
         return Response(
             CommentSerializer(updated_comment).data,
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_200_OK
         )
 
     def destroy(self, request, *args, **kwargs):
