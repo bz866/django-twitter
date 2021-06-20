@@ -77,7 +77,7 @@ class CommentTest(TestCase):
         )
         UPDATE_URL = DETAIL_URL.format(comment.id)
 
-        # POST method only
+        # PUT method only
         response = self.user1_client.get(UPDATE_URL, {'content': 'updated content'})
         self.assertEqual(response.status_code, 405)
         # non-anonymous user
@@ -89,12 +89,6 @@ class CommentTest(TestCase):
         # user doesn't own the comment
         response = self.user2_client.put(UPDATE_URL, {'content': 'updated content'})
         self.assertEqual(response.status_code, 403)
-        # comment doesn't exist
-        response = self.user1_client.put(
-            DETAIL_URL.format(999),
-            {'content': 'updated content'}
-        )
-        self.assertEqual(response.status_code, 404)
         # user can only update the content
         # the module will ignore changes that are not content
         before_create_time = comment.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -118,5 +112,29 @@ class CommentTest(TestCase):
         self.assertNotEqual(response.data['updated_at'], before_update_time) # TODO updated_at before and after should not be the same
         self.assertNotEqual(response.data['updated_at'], timezone.now())
 
-    def test_destroy(self):
-        pass
+    def test_destroy(self):# dummy comment
+        comment = Comment.objects.create(
+            user=self.user1,
+            tweet=self.tweet1,
+            content='original comment'
+        )
+        DELETE_URL = DETAIL_URL.format(comment.id)
+        # DELETE method only
+        response = self.user1_client.post(DELETE_URL)
+        self.assertEqual(response.status_code, 405)
+        # non-anonymous client
+        response = self.anonymous_client.delete(DELETE_URL)
+        self.assertEqual(response.status_code, 403)
+        # user doesn't own the comment
+        response = self.user2_client.delete(DELETE_URL)
+        self.assertEqual(response.status_code, 403)
+        # non exist comment
+        response = self.user1_client.delete(DETAIL_URL.format(999))
+        self.assertEqual(response.status_code, 404)
+
+        # delete
+        cnt_comments_before_delete = Comment.objects.count()
+        response = self.user1_client.delete(DELETE_URL)
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(Comment.objects.count(), cnt_comments_before_delete-1)
+
