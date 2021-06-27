@@ -4,10 +4,10 @@ from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from tweets.models import Tweet
 import time
-import datetime
 
 CREATE_URL = '/api/comments/'
 DETAIL_URL = '/api/comments/{}/'
+LIST_URL = '/api/comments/'
 
 
 class CommentTest(TestCase):
@@ -29,11 +29,24 @@ class CommentTest(TestCase):
             user=self.user2,
             content='tweet without any comments'
         )
+        # dummy comment
+        self.comment1 = Comment.objects.create(
+            user=self.user1,
+            tweet=self.tweet1,
+            content='original comment'
+        )
+        self.comment2 = Comment.objects.create(
+            user=self.user2,
+            tweet=self.tweet1,
+            content='original comment'
+        )
+        self.comment3 = Comment.objects.create(
+            user=self.user1,
+            tweet=self.tweet2,
+            content='original comment'
+        )
 
     def test_create(self):
-        # POST method only
-        response = self.user1_client.get(CREATE_URL, {'tweet_id': self.tweet1.id, 'content': 'sample comment'})
-        self.assertEqual(response.status_code, 405)
         # non-anonymous user
         response = self.anonymous_client.post(CREATE_URL, {'tweet_id': self.tweet1.id, 'content': 'sample comment'})
         self.assertEqual(response.status_code, 403)
@@ -70,12 +83,7 @@ class CommentTest(TestCase):
 
     def test_update(self):
         # dummy comment
-        comment = Comment.objects.create(
-            user=self.user1,
-            tweet=self.tweet1,
-            content='original comment'
-        )
-        UPDATE_URL = DETAIL_URL.format(comment.id)
+        UPDATE_URL = DETAIL_URL.format(self.comment1.id)
 
         # PUT method only
         response = self.user1_client.get(UPDATE_URL, {'content': 'updated content'})
@@ -91,8 +99,8 @@ class CommentTest(TestCase):
         self.assertEqual(response.status_code, 403)
         # user can only update the content
         # the module will ignore changes that are not content
-        before_create_time = comment.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        before_update_time = comment.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        before_create_time = self.comment1.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        before_update_time = self.comment1.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         print("CREATE: ", before_create_time)
         print("UPDATE: ", before_update_time)
         now = time.time()
@@ -103,7 +111,7 @@ class CommentTest(TestCase):
             'created_at': timezone.now(),
         })
         self.assertEqual(response.status_code, 200)
-        comment.refresh_from_db() # re-load updated data from the database
+        self.comment1.refresh_from_db() # re-load updated data from the database
         self.assertEqual(response.data['content'], 'updated content')
         self.assertEqual(response.data['user']['id'], self.user1.id)
         self.assertEqual(response.data['tweet_id'], self.tweet1.id)
@@ -112,13 +120,8 @@ class CommentTest(TestCase):
         self.assertNotEqual(response.data['updated_at'], before_update_time) # TODO updated_at before and after should not be the same
         self.assertNotEqual(response.data['updated_at'], timezone.now())
 
-    def test_destroy(self):# dummy comment
-        comment = Comment.objects.create(
-            user=self.user1,
-            tweet=self.tweet1,
-            content='original comment'
-        )
-        DELETE_URL = DETAIL_URL.format(comment.id)
+    def test_destroy(self):
+        DELETE_URL = DETAIL_URL.format(self.comment1.id)
         # DELETE method only
         response = self.user1_client.post(DELETE_URL)
         self.assertEqual(response.status_code, 405)
@@ -138,3 +141,29 @@ class CommentTest(TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Comment.objects.count(), cnt_comments_before_delete-1)
 
+    def test_list(self):
+        # # get method only
+        # response = self.user1_client.post(LIST_URL, {'tweet_id': self.tweet1.id})
+        # self.assertEqual(response.status_code, 405)
+        # allow non-anonymous user
+        response = self.anonymous_client.get(LIST_URL, {'tweet_id': self.tweet1.id})
+        self.assertEqual(response.status_code, 403)
+        # must specify the tweet_id
+        response = self.user1_client.get(LIST_URL)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['message'], "missing 'tweet_id' in request")
+        # tweet_id must exist
+        response = self.user1_client.get(LIST_URL, {'tweet_id': 999})
+        self.assertEqual(response.status_code, 400)
+        # order by created at
+        response = self.user1_client.get(LIST_URL, {'tweet_id': self.tweet1.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'][0]['id'], self.comment1.id)
+        self.assertEqual(response.data['comments'][1]['id'], self.comment2.id)
+        # order of the comment doesn't change in comment updating
+        UPDATE_URL = DETAIL_URL.format(self.comment2.id)
+        self.user2_client.put(UPDATE_URL, {'content': 'updated comment content'})
+        response = self.user1_client.get(LIST_URL, {'tweet_id': self.tweet1.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'][0]['id'], self.comment1.id)
+        self.assertEqual(response.data['comments'][1]['id'], self.comment2.id)
