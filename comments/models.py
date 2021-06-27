@@ -13,7 +13,7 @@ class Comment(models.Model):
 
     class Meta:
         index_together = (('tweet', 'created_at'), )
-        ordering = ('tweet', '-created_at')
+        ordering = ('tweet', 'created_at')
 
     def __str__(self):
         return f'{self.created_at}\n Under {self.tweet_id}\n @{self.user}\n comments: {self.content}'

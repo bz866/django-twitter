@@ -3,7 +3,24 @@
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/accounts/api/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/api/serializer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/serializers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/comments/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/migrations/0002_auto_20210523_1539.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/migrations/0003_auto_20210523_1546.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/0002_auto_20210523_1909.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/migrations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/twitter/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/settings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,6 +41,14 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitSEFilterConfiguration">
+    <file-type-list>
+      <filtered-out-file-type name="LOCAL_BRANCH" />
+      <filtered-out-file-type name="REMOTE_BRANCH" />
+      <filtered-out-file-type name="TAG" />
+      <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
+    </file-type-list>
+  </component>
   <component name="ProjectId" id="1ru6xSZziBCHgunttnCuPmM8kTL" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -38,13 +63,20 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/tweets/migrations" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tweets/migrations" />
+      <recent name="$PROJECT_DIR$/newsfeeds/migrations" />
+      <recent name="$PROJECT_DIR$/friendships/migrations" />
+    </key>
   </component>
   <component name="RunManager" selected="Django Server.django-twitter">
     <configuration name="Test: accounts.api.tests" type="DjangoTestsConfigurationType" temporary="true">
@@ -116,6 +148,7 @@
       <workItem from="1621990473235" duration="29000" />
       <workItem from="1622059511371" duration="1804000" />
       <workItem from="1624023114678" duration="5302000" />
+      <workItem from="1624729324518" duration="8134000" />
     </task>
     <servers />
   </component>

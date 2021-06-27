@@ -30,7 +30,7 @@ class UserSerializerForFriendship(serializers.ModelSerializer):
 class UserSerializerForComment(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username')
+        fields = ('id', 'username', )
 
 
 class SignUpSerializer(serializers.ModelSerializer):
