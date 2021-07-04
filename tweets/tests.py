@@ -18,8 +18,8 @@ class TweetTest(TestCase):
             user=self.user_1,
             content='defaultcontent',
         )
-        self.assertEqual(tweet_1.hours_to_now(), 0)
+        self.assertEqual(tweet_1.hours_to_now, 0)
         tweet_1.created_at = utc_now() - timedelta(hours=10)
-        self.assertEqual(tweet_1.hours_to_now(), 10)
+        self.assertEqual(tweet_1.hours_to_now, 10)
 
 

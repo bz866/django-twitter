@@ -1,14 +1,13 @@
-from comments.api.serializers import (
-    CommentSerializer,
-    CommentSerializerForCreate,
-    CommentSerializerForUpdate,
-)
+from comments.api.serializers import CommentSerializer
+from comments.api.serializers import CommentSerializerForCreate
+from comments.api.serializers import CommentSerializerForUpdate
 from comments.models import Comment
 from comments.api.permissions import IsObjectOwner
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from utils.decorators import require_params
 
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -48,13 +47,8 @@ class CommentViewSet(viewsets.GenericViewSet):
             status=status.HTTP_201_CREATED
         )
 
+    @require_params(require_attrs='query_params', params=['tweet_id'])
     def list(self, request, *args, **kwargs):
-        # only return comments of the specified tweet
-        if 'tweet_id' not in request.query_params:
-            return Response({
-                'success': False,
-                'message': "missing 'tweet_id' in request"
-            }, status=status.HTTP_400_BAD_REQUEST)
         # filter comments by tweet_id, and order comments by created_at time
         queryset = self.get_queryset()
         comments = self.filter_queryset(queryset)

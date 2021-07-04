@@ -1,8 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from utils.time_helper import (
-    utc_now,
-)
+from utils.time_helper import utc_now
 
 
 # Create your models here.
@@ -17,6 +15,7 @@ class Tweet(models.Model):
         ]
         ordering = ['user', '-created_at']
 
+    @property
     def hours_to_now(self):
         # no timezone information from datetime.now()
         return (utc_now() - self.created_at).seconds // 3600

@@ -101,8 +101,6 @@ class CommentTest(TestCase):
         # the module will ignore changes that are not content
         before_create_time = self.comment1.created_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         before_update_time = self.comment1.updated_at.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        print("CREATE: ", before_create_time)
-        print("UPDATE: ", before_update_time)
         now = time.time()
         response = self.user1_client.put(UPDATE_URL, {
             'content': 'updated content',
@@ -151,7 +149,7 @@ class CommentTest(TestCase):
         # must specify the tweet_id
         response = self.user1_client.get(LIST_URL)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['message'], "missing 'tweet_id' in request")
+        self.assertEqual(response.data['message'], "missing tweet_id in request")
         # tweet_id must exist
         response = self.user1_client.get(LIST_URL, {'tweet_id': 999})
         self.assertEqual(response.status_code, 400)
@@ -167,3 +165,5 @@ class CommentTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['comments'][0]['id'], self.comment1.id)
         self.assertEqual(response.data['comments'][1]['id'], self.comment2.id)
+
+

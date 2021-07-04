@@ -13,8 +13,6 @@ UNFOLLOW_URL = '/api/friendships/{}/unfollow/'
 class FriendshipTest(TestCase):
 
     def setUp(self):
-        # anonymous client
-        self.anonymous_client = APIClient()
         # client 1
         self.user_client_1 = APIClient()
         self.user_1 = self.create_user(
@@ -94,7 +92,6 @@ class FriendshipTest(TestCase):
             {'user_id': self.user_1.id},
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data, "Please check input. Query type missed.")
         # wrong query type
         response = self.anonymous_client.get(
             LIST_FOLLOWERS_URL,
