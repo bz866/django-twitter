@@ -1,16 +1,14 @@
 from tweets.models import Tweet
-from tweets.api.serializers import (
-    TweetSerializer,
-    TweetCreateSerializer,
-)
+from tweets.api.serializers import TweetSerializer
+from tweets.api.serializers import TweetCreateSerializer
+from tweets.api.serializers import TweetSerializerWithComments
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-)
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from newsfeeds.services import NewsFeedService
+from utils.decorators import require_params
 
 
 # Create your views here.
@@ -23,11 +21,8 @@ class TweetViewSet(viewsets.GenericViewSet):
             return [AllowAny(),]
         return [IsAuthenticated(),]
 
+    @require_params(require_attrs='query_params', params=['user_id'])
     def list(self, request):
-        # check if user id in request parameter
-        if 'user_id' not in request.query_params:
-            return Response('missing user_id parameter', status=status.HTTP_400_BAD_REQUEST)
-
         # select out all tweets of a specific user
         queryset = Tweet.objects.filter(
             user_id=request.query_params['user_id']
@@ -55,3 +50,10 @@ class TweetViewSet(viewsets.GenericViewSet):
             'success': True,
             'tweet': TweetSerializer(tweet).data,
         }, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, *args, **kwargs):
+        tweet = self.get_object()
+        return Response(
+            TweetSerializerWithComments(tweet).data,
+            status=status.HTTP_200_OK
+        )

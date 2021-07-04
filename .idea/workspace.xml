@@ -3,24 +3,22 @@
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/accounts/api/serializer.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/api/serializer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/comments/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/serializers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/comments/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/comments/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/api/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/comments/migrations/0001_initial.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/comments/migrations/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/comments/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/comments/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/comments/migrations/0002_alter_comment_options.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/friendships/migrations/0001_initial.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/migrations/0002_auto_20210523_1539.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/migrations/0003_auto_20210523_1546.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/migrations/__init__.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/0001_initial.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/0002_auto_20210523_1909.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/newsfeeds/migrations/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testing/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/testing/testcases.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tweets/migrations/0001_initial.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/migrations/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/twitter/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/tests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
