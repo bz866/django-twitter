@@ -1,7 +1,5 @@
-from testing.testcases import TestCase
-from comments.models import Comment
-from tweets.models import Tweet
 from likes.models import Like
+from testing.testcases import TestCase
 
 
 class LikeTest(TestCase):

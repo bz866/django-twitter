@@ -13,3 +13,4 @@ class LikesAdmin(admin.ModelAdmin):
         'created_at',
     )
     list_filter = ('content_type',)
+

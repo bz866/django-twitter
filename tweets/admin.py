@@ -6,8 +6,8 @@ from tweets.models import Tweet
 @admin.register(Tweet)
 class TweetsAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
-    list_display = [
+    list_display = (
         'created_at',
         'user',
         'content',
-    ]
+    )
