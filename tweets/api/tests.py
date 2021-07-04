@@ -4,13 +4,11 @@ from tweets.models import Tweet
 
 LIST_URL = '/api/tweets/'
 CREATE_URL = '/api/tweets/'
-
+RETRIEVE_URL = '/api/tweets/{}/'
 
 class TweetTest(TestCase):
 
     def setUp(self):
-        self.anonymous_client = APIClient()
-
         self.user1_client = APIClient()
         self.user1 = self.create_user(username='username1')
         self.user1_client.force_authenticate(user=self.user1)
@@ -21,12 +19,13 @@ class TweetTest(TestCase):
 
         self.user2_client = APIClient()
         self.user2 = self.create_user(username='username2')
+        self.user2_client.force_authenticate(user=self.user2)
         self.user2_tweets = [
             self.create_tweet(self.user2, i)
             for i in range(2) # 2 tweets for user_2
         ]
 
-    def test_list_tweet(self):
+    def test_list(self):
         # need user_id to list all tweets belong to a user
         response = self.anonymous_client.get(LIST_URL)
         self.assertEqual(response.status_code, 400)
@@ -46,7 +45,7 @@ class TweetTest(TestCase):
         self.assertEqual(response.data['tweet'][0]['id'], self.user1_tweets[2].id)
         self.assertEqual(response.data['tweet'][1]['id'], self.user1_tweets[1].id)
 
-    def test_create_tweet(self):
+    def test_create(self):
         # anonymous user can not create tweet
         response = self.anonymous_client.post(CREATE_URL)
         self.assertEqual(response.status_code, 403)
@@ -84,5 +83,44 @@ class TweetTest(TestCase):
         self.assertEqual(Tweet.objects.count(), 7)
         self.assertEqual(response.data['tweet']['user']['username'], 'username2')
 
+    def test_retrieve(self):
+        dummy_url = RETRIEVE_URL.format(self.user1_tweets[0].id)
+        # GET method only
+        response = self.user1_client.post(dummy_url)
+        self.assertEqual(response.status_code, 405)
+        # login users only
+        response = self.anonymous_client.get(dummy_url)
+        self.assertEqual(response.status_code, 403)
+        # access non-exist tweet
+        response = self.user1_client.get(RETRIEVE_URL.format(-1))
+        self.assertEqual(response.status_code, 404)
+
+        # dummy comments
+        user1_comments_own = [
+            self.create_comment(self.user1, self.user1_tweets[i])
+            for i in range(0, 3)
+        ]
+        user2_comments_own = [
+            self.create_comment(self.user2, self.user2_tweets[i])
+            for i in range(1, -1, -1)
+        ]
+        user1_comments_others = [
+            self.create_comment(self.user1, self.user2_tweets[i])
+            for i in range(1, -1, -1)
+        ]
+        # check length of comments of a tweet
+        response = self.user2_client.get(RETRIEVE_URL.format(self.user1_tweets[0].id))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['comments']), 1)
+        # comments ordered by created_at
+        response = self.user1_client.get(RETRIEVE_URL.format(self.user2_tweets[0].id))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['comments']), 2)
+        self.assertEqual(response.data['comments'][0]['user']['id'], self.user2.id)
+        self.assertEqual(response.data['comments'][1]['user']['id'], self.user1.id)
+        self.assertLess(
+            response.data['comments'][0]['created_at'],
+            response.data['comments'][1]['created_at']
+        )
 
 

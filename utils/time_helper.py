@@ -2,7 +2,6 @@ from datetime import (
     datetime,
 )
 import pytz
-from django.conf import settings
 
 
 def utc_now():

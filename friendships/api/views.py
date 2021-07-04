@@ -6,11 +6,11 @@ from friendships.api.serializers import (
 )
 from django.contrib.auth.models import User
 from rest_framework import viewsets
-from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from utils.decorators import require_params
 
 
 class FriendshipViewSet(
@@ -40,23 +40,13 @@ class FriendshipViewSet(
         serializer = FriendshipFollowingSerializer(friendships, many=True)
         return Response({'friendship': serializer.data})
 
+    @require_params(require_attrs='query_params', params=['type', 'user_id'])
     def list(self, request):
         # list out followers and followings with Rest Framework Query Style
         # check query type
-        if 'type' not in request.query_params:
-            return Response(
-                "Please check input. Query type missed.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         if request.query_params['type'] not in ['followers', 'followings']:
             return Response(
                 "Please check input. Query type need to be in ['followers', 'followings]",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        # must specify the user_id for query
-        if 'user_id' not in request.query_params:
-            return Response(
-                "Please check input. user_id need to be specified",
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
