@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
+        fields = ('id', 'username', 'email',)
 
 
 class UserSerializerForTweet(serializers.ModelSerializer):
@@ -18,19 +18,25 @@ class UserSerializerForTweet(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username')
+        fields = ('id', 'username',)
 
 
 class UserSerializerForFriendship(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username')
+        fields = ('id', 'username',)
 
 
 class UserSerializerForComment(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', )
+        fields = ('id', 'username',)
+
+
+class UserSerializerForLike(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username',)
 
 
 class SignUpSerializer(serializers.ModelSerializer):
