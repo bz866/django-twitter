@@ -4,9 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from likes.api.serializers import LikeSerializer
 from likes.api.serializers import LikeSerializerForCreate
+from likes.api.serializers import LikeSerializerForCancel
 from utils.decorators import require_params
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 
 
 class LikeViewSet(viewsets.GenericViewSet):
@@ -14,12 +16,12 @@ class LikeViewSet(viewsets.GenericViewSet):
     serializer_class = LikeSerializerForCreate
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'cancel']:
             return [IsAuthenticated(),]
         return [AllowAny(),]
 
     @require_params(require_attrs='data', params=['content_type', 'object_id'])
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = LikeSerializerForCreate(
             data=request.data,
             context={'request': request},
@@ -33,4 +35,22 @@ class LikeViewSet(viewsets.GenericViewSet):
         return Response({
             'success': True,
             'like': LikeSerializer(like).data
+        }, status=status.HTTP_200_OK)
+
+    @action(methods=['POST'], detail=False)
+    @require_params(require_attrs='data', params=['content_type', 'object_id'])
+    def cancel(self, request):
+        serializer = LikeSerializerForCancel(
+            data=request.data,
+            context={'request': request},
+        )
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'error': serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST)
+        deleted = serializer.cancel()
+        return Response({
+            'success': True,
+            'deleted': deleted,
         }, status=status.HTTP_200_OK)

@@ -3,6 +3,8 @@ from rest_framework.test import APIClient
 from likes.models import Like
 
 CREATE_URL = '/api/likes/'
+CANCEL_URL = '/api/likes/cancel/'
+
 
 class LikeTest(TestCase):
 
@@ -103,3 +105,61 @@ class LikeTest(TestCase):
         response = self.user2_client.post(CREATE_URL, data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Like.objects.count(), 2)
+
+    def test_like_cancel(self):
+        data_tweet1 = {'content_type': 'tweet', 'object_id': self.tweet1.id}
+        data_comment1 = {'content_type': 'comment', 'object_id': self.comment1.id}
+        data_comment2 = {'content_type': 'comment', 'object_id': self.comment2.id}
+        # POST method only
+        response = self.user1_client.get(CANCEL_URL, data_tweet1)
+        self.assertEqual(response.status_code, 405)
+        # non-anonymous client
+        response = self.anonymous_client.post(CANCEL_URL, data_tweet1)
+        self.assertEqual(response.status_code, 403)
+
+        # invalid content_type
+        response = self.user1_client.post(CANCEL_URL, {
+            'content_type': 'twitter',
+            'object_id': self.comment1.id,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual('content_type' in response.data['error'], True)
+        # invalid object_id
+        response = self.user1_client.post(CANCEL_URL, {
+            'content_type': 'comment',
+            'object_id': -1,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual('object_id' in response.data['error'], True)
+
+        # create likes
+        self.user1_client.post(CREATE_URL, data_tweet1)
+        self.user2_client.post(CREATE_URL, data_tweet1)
+        self.user2_client.post(CREATE_URL, data_comment1)
+        self.assertEqual(self.tweet1.like_set.count(), 2)
+        self.assertEqual(self.comment1.like_set.count(), 1)
+        self.assertEqual(self.comment2.like_set.count(), 0)
+
+        # cancel like
+        response = self.user2_client.post(CANCEL_URL, data_tweet1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 1)
+        self.assertEqual(self.tweet1.like_set.count(), 1)
+
+        # duplicate cancel
+        response = self.user2_client.post(CANCEL_URL, data_tweet1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 0)
+        self.assertEqual(self.tweet1.like_set.count(), 1)
+
+        # cancel non-exist like
+        response = self.user2_client.post(CANCEL_URL, data_comment2)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 0)
+        self.assertEqual(self.comment2.like_set.count(), 0)
+        response = self.user1_client.post(CANCEL_URL, data_comment1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['deleted'], 0)
+        self.assertEqual(self.comment1.like_set.count(), 1)
+
+
