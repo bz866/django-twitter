@@ -14,7 +14,8 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ('user', 'created_at',)
 
-class LikeSerializerForCreate(serializers.ModelSerializer):
+
+class BaseLikeSerializerForCreateAndCancel(serializers.ModelSerializer):
     content_type = serializers.ChoiceField(choices=['comment', 'tweet'])
     object_id = serializers.IntegerField()
 
@@ -39,6 +40,8 @@ class LikeSerializerForCreate(serializers.ModelSerializer):
 
         return attrs
 
+
+class LikeSerializerForCreate(BaseLikeSerializerForCreateAndCancel):
     def create(self, validated_data):
         model_class = self._get_for_model(validated_data)
         like, _ = Like.objects.get_or_create(
@@ -47,3 +50,15 @@ class LikeSerializerForCreate(serializers.ModelSerializer):
             object_id=validated_data['object_id'],
         )
         return like
+
+
+class LikeSerializerForCancel(BaseLikeSerializerForCreateAndCancel):
+    def cancel(self):
+        model_class = self._get_for_model(self.validated_data)
+        deleted, _ = Like.objects.filter(
+            user=self.context['request'].user,
+            content_type=ContentType.objects.get_for_model(model_class),
+            object_id=self.validated_data['object_id'],
+        ).delete()
+        return deleted
+
