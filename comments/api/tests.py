@@ -8,6 +8,10 @@ import time
 CREATE_URL = '/api/comments/'
 DETAIL_URL = '/api/comments/{}/'
 LIST_URL = '/api/comments/'
+TWEET_RETRIEVE_URL = '/api/tweets/{}/'
+TWEET_LIST_URL = '/api/tweets/'
+COMMENT_LIST_URL = '/api/comments/'
+NEWSFEED_LIST_URL = '/api/newsfeeds/'
 
 
 class CommentTest(TestCase):
@@ -143,7 +147,7 @@ class CommentTest(TestCase):
         # # get method only
         # response = self.user1_client.post(LIST_URL, {'tweet_id': self.tweet1.id})
         # self.assertEqual(response.status_code, 405)
-        # allow non-anonymous user
+        # non-anonymous user
         response = self.anonymous_client.get(LIST_URL, {'tweet_id': self.tweet1.id})
         self.assertEqual(response.status_code, 403)
         # must specify the tweet_id
@@ -151,7 +155,7 @@ class CommentTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['message'], "missing tweet_id in request")
         # tweet_id must exist
-        response = self.user1_client.get(LIST_URL, {'tweet_id': 999})
+        response = self.user1_client.get(LIST_URL, {'tweet_id': -1})
         self.assertEqual(response.status_code, 400)
         # order by created at
         response = self.user1_client.get(LIST_URL, {'tweet_id': self.tweet1.id})
@@ -165,5 +169,58 @@ class CommentTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['comments'][0]['id'], self.comment1.id)
         self.assertEqual(response.data['comments'][1]['id'], self.comment2.id)
+
+    def test_comment_like(self):
+        # create like on comment
+        self.create_like(user=self.user1, object=self.comment1)
+        self.create_like(user=self.user2, object=self.comment2)
+        self.create_like(user=self.user2, object=self.comment1)
+
+        # check comment like in Tweet Retrieve
+        response = self.user1_client.get(
+            TWEET_RETRIEVE_URL.format(self.tweet1.id)
+        )
+        self.assertEqual(response.data['has_liked'], False) # tweet not liked
+        self.assertEqual(response.data['like_count'], False) # tweet has no likes
+        self.assertEqual(response.data['comment_count'], 2)
+        self.assertEqual(response.data['comments'][0]['has_liked'], True)
+        self.assertEqual(response.data['comments'][0]['like_count'], 2)
+        self.assertEqual(response.data['comments'][1]['has_liked'], False)
+        self.assertEqual(response.data['comments'][1]['like_count'], 1)
+        response = self.user2_client.get(
+            TWEET_RETRIEVE_URL.format(self.tweet1.id)
+        )
+        self.assertEqual(response.data['comment_count'], 2)
+        self.assertEqual(response.data['comments'][0]['has_liked'], True)
+        self.assertEqual(response.data['comments'][0]['like_count'], 2)
+        self.assertEqual(response.data['comments'][1]['has_liked'], True)
+        self.assertEqual(response.data['comments'][1]['like_count'], 1)
+
+        # check comment like in Tweet LIST
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id},
+        )
+        self.assertEqual(response.data['tweet'][0]['comment_count'], 2)
+        response = self.user2_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user2.id},
+        )
+        self.assertEqual(response.data['tweet'][0]['comment_count'], 1)
+
+        # check comment like in Comment LIST
+        response = self.user1_client.get(COMMENT_LIST_URL, {'tweet_id': self.tweet1.id})
+        self.assertEqual(response.data['comments'][0]['has_liked'], True)
+        self.assertEqual(response.data['comments'][0]['like_count'], 2)
+        self.assertEqual(response.data['comments'][1]['has_liked'], False)
+        self.assertEqual(response.data['comments'][1]['like_count'], 1)
+        response = self.user1_client.get(COMMENT_LIST_URL, {'tweet_id': self.tweet2.id})
+        self.assertEqual(response.data['comments'][0]['has_liked'], False)
+        self.assertEqual(response.data['comments'][0]['like_count'], 0)
+        response = self.user2_client.get(COMMENT_LIST_URL, {'tweet_id': self.tweet1.id})
+        self.assertEqual(response.data['comments'][0]['has_liked'], True)
+        self.assertEqual(response.data['comments'][1]['has_liked'], True)
+
+
 
 
