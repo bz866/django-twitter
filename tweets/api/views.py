@@ -1,7 +1,7 @@
 from tweets.models import Tweet
 from tweets.api.serializers import TweetSerializer
 from tweets.api.serializers import TweetCreateSerializer
-from tweets.api.serializers import TweetSerializerWithComments
+from tweets.api.serializers import TweetSerializerForDetail
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,7 +11,6 @@ from newsfeeds.services import NewsFeedService
 from utils.decorators import require_params
 
 
-# Create your views here.
 class TweetViewSet(viewsets.GenericViewSet):
     serializer_class = TweetCreateSerializer
     queryset = Tweet.objects.all()
@@ -27,8 +26,11 @@ class TweetViewSet(viewsets.GenericViewSet):
         queryset = Tweet.objects.filter(
             user_id=request.query_params['user_id']
         ).order_by('-created_at')
-        serializer = TweetSerializer(queryset, many=True)
-
+        serializer = TweetSerializer(
+            queryset,
+            context={'request': request},
+            many=True,
+        )
         # wrap the list of tweet contents in dict
         return Response({'tweet': serializer.data})
 
@@ -46,14 +48,22 @@ class TweetViewSet(viewsets.GenericViewSet):
 
         tweet = serializer.save()
         NewsFeedService().fanout_to_followers(tweet)
+        serializer = TweetSerializer(
+            instance=tweet,
+            context={'request': request},
+        )
         return Response({
             'success': True,
-            'tweet': TweetSerializer(tweet).data,
+            'tweet': serializer.data,
         }, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, *args, **kwargs):
         tweet = self.get_object()
+        serializer = TweetSerializerForDetail(
+            instance=tweet,
+            context={'request': request},
+        )
         return Response(
-            TweetSerializerWithComments(tweet).data,
+            serializer.data,
             status=status.HTTP_200_OK
         )

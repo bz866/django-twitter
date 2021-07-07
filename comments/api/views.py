@@ -42,8 +42,12 @@ class CommentViewSet(viewsets.GenericViewSet):
 
         # save validated comment
         comment = serializer.save()
+        serializer = CommentSerializer(
+            instance=comment,
+            context={'request': request},
+        )
         return Response(
-            CommentSerializer(comment).data,
+            serializer.data,
             status=status.HTTP_201_CREATED
         )
 
@@ -52,7 +56,10 @@ class CommentViewSet(viewsets.GenericViewSet):
         # filter comments by tweet_id, and order comments by created_at time
         queryset = self.get_queryset()
         comments = self.filter_queryset(queryset)
-        serializer = CommentSerializer(comments, many=True)
+        serializer = CommentSerializer(
+            instance=comments,
+            context={'request': request},
+            many=True)
         return Response({
             'success': True,
             'comments': serializer.data,
@@ -76,8 +83,12 @@ class CommentViewSet(viewsets.GenericViewSet):
 
         # save the update
         updated_comment = serializer.save()
+        serializer = CommentSerializer(
+            instance=updated_comment,
+            context={'request': request},
+        )
         return Response(
-            CommentSerializer(updated_comment).data,
+            serializer.data,
             status=status.HTTP_200_OK
         )
 

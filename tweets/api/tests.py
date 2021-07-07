@@ -1,10 +1,16 @@
 from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from tweets.models import Tweet
+from comments.models import Comment
 
 LIST_URL = '/api/tweets/'
 CREATE_URL = '/api/tweets/'
 RETRIEVE_URL = '/api/tweets/{}/'
+TWEET_RETRIEVE_URL = '/api/tweets/{}/'
+TWEET_LIST_URL = '/api/tweets/'
+COMMENT_LIST_URL = '/api/comments/'
+NEWSFEED_LIST_URL = '/api/newsfeeds/'
+
 
 class TweetTest(TestCase):
 
@@ -122,5 +128,63 @@ class TweetTest(TestCase):
             response.data['comments'][0]['created_at'],
             response.data['comments'][1]['created_at']
         )
+
+    def test_tweet_like(self):
+        # dummy tweet
+        tweet1 = Tweet.objects.create(
+            user=self.user1,
+            content='tweet 1 for comment test'
+        )
+        tweet2 = Tweet.objects.create(
+            user=self.user2,
+            content='tweet without any comments'
+        )
+        # dummy comment
+        comment1 = Comment.objects.create(
+            user=self.user1,
+            tweet=tweet1,
+            content='original comment'
+        )
+        comment2 = Comment.objects.create(
+            user=self.user2,
+            tweet=tweet1,
+            content='original comment'
+        )
+        comment3 = Comment.objects.create(
+            user=self.user1,
+            tweet=tweet2,
+            content='original comment'
+        )
+
+        # create like on comment
+        self.create_like(user=self.user1, object=comment1)
+        self.create_like(user=self.user2, object=comment2)
+        self.create_like(user=self.user2, object=comment1)
+
+        # check comment like in Tweet Retrieve
+        response = self.user1_client.get(
+            TWEET_RETRIEVE_URL.format(tweet1.id)
+        )
+        self.assertEqual(response.data['has_liked'], False) # tweet not liked
+        self.assertEqual(response.data['like_count'], False) # tweet has no likes
+        self.assertEqual(response.data['comment_count'], 2)
+        response = self.user2_client.get(
+            TWEET_RETRIEVE_URL.format(tweet1.id)
+        )
+        self.assertEqual(response.data['comment_count'], 2)
+
+        # check comment like in Tweet LIST
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id},
+        )
+        self.assertEqual(response.data['tweet'][0]['comment_count'], 2)
+        response = self.user2_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user2.id},
+        )
+        self.assertEqual(response.data['tweet'][0]['comment_count'], 1)
+
+
 
 
