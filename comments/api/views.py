@@ -1,8 +1,9 @@
+from comments.api.permissions import IsObjectOwner
 from comments.api.serializers import CommentSerializer
 from comments.api.serializers import CommentSerializerForCreate
 from comments.api.serializers import CommentSerializerForUpdate
 from comments.models import Comment
-from comments.api.permissions import IsObjectOwner
+from inbox.services import NotificationService
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -42,6 +43,8 @@ class CommentViewSet(viewsets.GenericViewSet):
 
         # save validated comment
         comment = serializer.save()
+        # raise notification for comment creation
+        NotificationService.send_comment_notification(comment)
         serializer = CommentSerializer(
             instance=comment,
             context={'request': request},
