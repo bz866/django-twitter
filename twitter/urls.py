@@ -23,6 +23,7 @@ from newsfeeds.api.views import NewsFeedViewSet
 from rest_framework import routers
 from tweets.api.views import TweetViewSet
 from likes.api.views import LikeViewSet
+import notifications.urls
 
 
 router = routers.DefaultRouter()
@@ -38,4 +39,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
 ]

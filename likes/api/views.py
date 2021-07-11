@@ -9,6 +9,7 @@ from utils.decorators import require_params
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
+from inbox.services import NotificationService
 
 
 class LikeViewSet(viewsets.GenericViewSet):
@@ -31,7 +32,10 @@ class LikeViewSet(viewsets.GenericViewSet):
                 'success': False,
                 'error': serializer.errors,
             }, status=status.HTTP_400_BAD_REQUEST)
-        like = serializer.save()
+        like, created = serializer.get_or_create()
+        # raise notifications in creation, do not dispatch notifications if liked
+        if created:
+            NotificationService.send_like_notification(like)
         return Response({
             'success': True,
             'like': LikeSerializer(like).data
