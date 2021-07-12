@@ -32,7 +32,7 @@ class NotificationViewSet(GenericViewSet, ListModelMixin,):
         ).count()
         return Response({'count': count}, status=status.HTTP_200_OK)
 
-    @action(methods=['POST'], detail=False, url_path='mark-all-as-read')
+    @action(methods=['PUT'], detail=False, url_path='mark-all-as-read')
     def mark_all_as_read(self, request, *args, **kwargs):
         """
         mark all unread notifications to read if there is any
