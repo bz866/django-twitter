@@ -24,6 +24,7 @@ from rest_framework import routers
 from tweets.api.views import TweetViewSet
 from likes.api.views import LikeViewSet
 import notifications.urls
+from inbox.api.views import NotificationViewSet
 
 
 router = routers.DefaultRouter()
@@ -34,6 +35,7 @@ router.register(r'api/friendships', FriendshipViewSet, basename='friendships')
 router.register(r'api/newsfeeds', NewsFeedViewSet, basename='newsfeeds')
 router.register(r'api/comments', CommentViewSet, basename='comments')
 router.register(r'api/likes', LikeViewSet, basename='likes')
+router.register(r'api/notifications', NotificationViewSet, basename='notifications')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
