@@ -18,3 +18,19 @@ class NotificationSerializer(serializers.ModelSerializer):
             'unread',
             'description',
         )
+
+
+class NotificationSerializerForUpdate(serializers.ModelSerializer):
+    unread = serializers.BooleanField()
+
+    class Meta:
+        model = Notification
+        fields = ('unread',)
+
+    def update(self, instance, validated_data):
+        """
+        change the unread status only of a notification
+        """
+        instance.unread = validated_data['unread']
+        instance.save()
+        return instance
