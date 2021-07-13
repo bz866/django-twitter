@@ -121,7 +121,7 @@ class NotificationApiTest(TestCase):
 
         # notification list with filter
         # dummy read a notification
-        notification = Notification.objects.first()
+        notification = self.user1.notifications.first()
         notification.unread = False
         notification.save()
         response = self.user1_client.get(NOTIFICATION_LIST_URL, {'unread': True})
@@ -150,7 +150,7 @@ class NotificationApiTest(TestCase):
         self.assertEqual(response.data['count'], 0)
 
         # dummy read a notification
-        notification = Notification.objects.first()
+        notification = self.user1.notifications.first()
         notification.unread = False
         notification.save()
         # unread count changed
@@ -162,18 +162,60 @@ class NotificationApiTest(TestCase):
     def test_mark_all_as_read(self):
         url_mark_all_as_read = '/api/notifications/mark-all-as-read/'
         # non-anonymous client
-        response = self.anonymous_client.post(url_mark_all_as_read)
+        response = self.anonymous_client.put(url_mark_all_as_read)
         self.assertEqual(response.status_code, 403)
 
         # only show unread count for a specific user
-        response = self.user1_client.post(url_mark_all_as_read)
+        response = self.user1_client.put(url_mark_all_as_read)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['updated_count'], 2)
-        response = self.user2_client.post(url_mark_all_as_read)
+        response = self.user2_client.put(url_mark_all_as_read)
         self.assertEqual(response.data['updated_count'], 0)
         # slient when no unread notifications
-        response = self.user1_client.post(url_mark_all_as_read)
+        response = self.user1_client.put(url_mark_all_as_read)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['updated_count'], 0)
-        response = self.user2_client.post(url_mark_all_as_read)
+        response = self.user2_client.put(url_mark_all_as_read)
         self.assertEqual(response.data['updated_count'], 0)
+
+    def test_update(self):
+        notification = self.user1.notifications.first()
+        url_update = '/api/notifications/{}/'.format(notification.id)
+
+        # put method only
+        response = self.user1_client.post(url_update, {'unread': False})
+        self.assertEqual(response.status_code, 405)
+        # non-anonymous client
+        response = self.anonymous_client.put(url_update, {'unread': False})
+        self.assertEqual(response.status_code, 403)
+        # user doesn't own the notification
+        response = self.user2_client.put(url_update, {'unread': False})
+        self.assertEqual(response.status_code, 404)
+        # miss unread parameter
+        response = self.user1_client.put(url_update)
+        self.assertEqual(response.status_code, 400)
+        # non Boolean value in 'unread'
+        response = self.user1_client.put(url_update, {'unread': -1})
+        self.assertEqual(response.status_code, 400)
+
+        # update notification unread
+        response = self.user1_client.put(url_update, {'unread': False})
+        self.assertEqual(response.status_code, 200)
+        url_unread_count = '/api/notifications/unread-count/'
+        response = self.user1_client.get(url_unread_count)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 1)
+        response = self.user2_client.get(url_unread_count)
+        self.assertEqual(response.data['count'], 0)
+        # update notification other attributes
+        response = self.user1_client.put(url_update, {
+            'unread': True,
+            'verb': 'newverb',
+        })
+        self.assertEqual(response.status_code, 200)
+        # only allow unread status to be changed
+        self.assertNotEqual(response.data['notification']['verb'], 'newverb')
+        response = self.user1_client.get(url_unread_count)
+        self.assertEqual(response.data['count'], 2)
+        response = self.user2_client.get(url_unread_count)
+        self.assertEqual(response.data['count'], 0)
