@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,18 +35,21 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sessions',
     'django.contrib.staticfiles',
-    'django_filters',
     'rest_framework',
-    'accounts',
-    'tweets',
-    'friendships',
-    'newsfeeds',
-    'comments',
-    'likes',
+    # django 3rd party libraries
+    'django_filters',
     'notifications',
+    'storages',
+    # apps
+    'accounts',
+    'comments',
+    'friendships',
+    'likes',
+    'newsfeeds',
+    'tweets',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +145,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# set up the storage for user uploaded files
+DEFAULT_FILE_STORAGE = 'storages.backends.azure_storage.AzureStorage'
+# only access local file system in testing
+TESTING = ((' '.join(sys.argv)).find('manage.py test') != -1)
+if TESTING:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+AWS_STORAGE_BUCKET_NAME = 'django-twitter-binqianzeng'
+AWS_S3_REGION_NAME = 'us-east-1'
+
+# media/ as the folder for user uploaded files
+# When we take FileSystemStorage as the DEFAULT_FILE_STORAGE
+# uploaded files will be saved under MEDIA_ROOT
+# difference between media/ and static/
+# - media: files uploaded from users, not codes
+# - static: usually js, css files, static files for use direct access
+MEDIA_ROOT = 'media/'
+
+try:
+    from .local_settings import *
+except:
+    pass
