@@ -1,6 +1,6 @@
 from friendships.models import Friendship
 from rest_framework import serializers
-from accounts.api.serializer import UserSerializerForFriendship
+from accounts.api.serializers import UserSerializerForFriendship
 from django.contrib.auth.models import User
 from rest_framework.exceptions import ValidationError
 

@@ -1,5 +1,5 @@
 from tweets.models import Tweet
-from accounts.api.serializer import UserSerializerForTweet
+from accounts.api.serializers import UserSerializerForTweet
 from comments.api.serializers import CommentSerializerForTweet
 from rest_framework import serializers
 from likes.services import LikeService

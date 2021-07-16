@@ -1,7 +1,11 @@
+from accounts.models import UserProfile
 from django.contrib.auth.models import User
 from rest_framework import exceptions, status
 from rest_framework import serializers
-from rest_framework.fields import CharField, EmailField
+from rest_framework.fields import CharField
+from rest_framework.fields import EmailField
+from rest_framework.fields import FileField
+from rest_framework.serializers import SerializerMethodField
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,30 +17,40 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'email',)
 
 
-class UserSerializerForTweet(serializers.ModelSerializer):
-    username = CharField(min_length=6, max_length=20)
+class UserSerializerWithProfile(serializers.ModelSerializer):
+    nickname = CharField(source='profile.nickname')
+    avatar_url = SerializerMethodField()
+
+    def get_avatar_url(self, obj):
+        if obj.profile.avatar:
+            return obj.profile.avatar.url
+        return None
 
     class Meta:
         model = User
-        fields = ('id', 'username',)
+        fields = ('id', 'username', 'nickname', 'avatar_url')
 
 
-class UserSerializerForFriendship(serializers.ModelSerializer):
+class UserProfileSerializerForUpdate(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ('id', 'username',)
+        model = UserProfile
+        fields = ('nickname', 'avatar')
 
 
-class UserSerializerForComment(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username',)
+class UserSerializerForTweet(UserSerializerWithProfile):
+    pass
 
 
-class UserSerializerForLike(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username',)
+class UserSerializerForFriendship(UserSerializerWithProfile):
+    pass
+
+
+class UserSerializerForComment(UserSerializerWithProfile):
+    pass
+
+
+class UserSerializerForLike(UserSerializerWithProfile):
+    pass
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -79,6 +93,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             email=email
         )
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     username = CharField()

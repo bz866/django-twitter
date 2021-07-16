@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.api.serializer import UserSerializerForLike
+from accounts.api.serializers import UserSerializerForLike
 from likes.models import Like
 from rest_framework.exceptions import ValidationError
 from django.contrib.contenttypes.fields import ContentType
