@@ -1,7 +1,7 @@
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from django.contrib.auth.models import User
-from accounts.api.serializer import UserSerializer
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 SIGNUP_URL = "/api/accounts/signup/"
 LOGIN_URL = "/api/accounts/login/"
@@ -189,5 +189,77 @@ class AccountTest(TestCase):
         self.assertEqual(response.status_code, 405)
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.status_code, 200)
+
+
+class UserProfileTest(TestCase):
+    def setUp(self) -> None:
+        self.user1 = self.create_user(username='user1')
+        self.user1_client = APIClient()
+        self.user1_client.force_authenticate(user=self.user1)
+        self.user2 = self.create_user(username='user2')
+        self.user2_client = APIClient()
+        self.user2_client.force_authenticate(user=self.user2)
+
+    def test_update(self):
+        # user1 create profile
+        profile = self.user1.profile
+        url_profile_update = '/api/userprofiles/{}/'.format(profile.id)
+        dummy_img = SimpleUploadedFile(
+                name='my-cavatar.jpg',
+                content=str.encode('a fake image'),
+                content_type='image/jpeg',
+            )
+        data = {
+            'nickname': 'newnickname',
+            'avatar': SimpleUploadedFile(
+                name='my-avatar.jpg',
+                content=str.encode('a fake image'),
+                content_type='image/jpeg',
+            ),
+        }
+        # PUT method only
+        response = self.user1_client.post(url_profile_update, data)
+        self.assertEqual(response.status_code, 405)
+        # non-anonymous client
+        response = self.anonymous_client.put(url_profile_update, data)
+        self.assertEqual(response.status_code, 403)
+        # missing update content
+        response = self.user1_client.put(url_profile_update)
+        self.assertEqual(response.status_code, 200)
+        # only allow update owned profile
+        response = self.user2_client.put(url_profile_update, data)
+        self.assertEqual(response.status_code, 403)
+        # access non-exist profile
+        response = self.user1_client.put('/api/userprofiles/-1/', data)
+        self.assertEqual(response.status_code, 404)
+
+        # update the profile
+        # response = self.user1_client.put(url_profile_update, data)
+        response = self.user1_client.put(url_profile_update, {
+            'nickname': 'newnickname',
+            'avatar': SimpleUploadedFile(
+                name='my-avatar.jpg',
+                content=str.encode('a fake image'),
+                content_type='image/jpeg',
+            )
+        })
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertEqual(profile.nickname, 'newnickname')
+        self.assertTrue('my-avatar' in response.data['avatar'])
+        self.assertIsNotNone(profile.avatar)
+
+        # only update nickname
+        response = self.user1_client.put(url_profile_update, {'nickname': 'another nickname'})
+        self.assertEqual(response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertEqual(profile.nickname, 'another nickname')
+        self.assertTrue('my-avatar' in response.data['avatar'])
+        self.assertIsNotNone(profile.avatar)
+
+
+
+
+
 
 

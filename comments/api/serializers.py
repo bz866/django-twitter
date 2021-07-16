@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.api.serializer import UserSerializerForComment
+from accounts.api.serializers import UserSerializerForComment
 from comments.models import Comment
 from tweets.models import Tweet
 from rest_framework.exceptions import ValidationError
