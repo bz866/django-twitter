@@ -1,12 +1,12 @@
 from datetime import timedelta
-
-from django.test import TestCase
-from tweets.models import Tweet
 from django.contrib.auth.models import User
+from testing.testcases import TestCase
+from tweets.constants import TweetPhotoStatus
+from tweets.models import Tweet
+from tweets.models import TweetPhoto
 from utils.time_helper import utc_now
 
 
-# Create your tests here.
 class TweetTest(TestCase):
 
     def setUp(self):
@@ -23,3 +23,28 @@ class TweetTest(TestCase):
         self.assertEqual(tweet_1.hours_to_now, 10)
 
 
+class TweetPhotoTest(TestCase):
+
+    def setUp(self) -> None:
+        self.user1, self.user1_client = self.create_user_and_client(username='user1')
+        self.user2, self.user2_client = self.create_user_and_client(username='user2')
+        self.tweet = self.create_tweet(user=self.user1)
+
+    def test_tweetphoto(self):
+        self.assertEqual(TweetPhoto.objects.count(), 0)
+        tweetphoto1 = TweetPhoto.objects.create(
+            tweet=self.tweet,
+            user=self.user1,
+        )
+        self.assertEqual(TweetPhoto.objects.count(), 1)
+        self.assertEqual(tweetphoto1.status, TweetPhotoStatus.PENDING)
+        self.assertEqual(tweetphoto1.has_deleted, False)
+
+        tweetphoto2 = TweetPhoto.objects.create(
+            tweet=self.tweet,
+            user=self.user2,
+        )
+        self.assertEqual(TweetPhoto.objects.count(), 2)
+        self.assertEqual(tweetphoto2.status, TweetPhotoStatus.PENDING)
+        tweetphoto2.delete()
+        self.assertEqual(TweetPhoto.objects.count(), 1)
