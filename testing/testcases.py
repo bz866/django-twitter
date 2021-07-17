@@ -16,7 +16,7 @@ class TestCase(DjangoTestCase):
         self._anonymous_client = APIClient()
         return self._anonymous_client
 
-    def create_user(self, username, email=None, password=None, *args, **kwargs):
+    def create_user(self, username, email=None, password=None):
         if not email:
             email = f'{username}@email.com'
         if not password:
@@ -27,6 +27,12 @@ class TestCase(DjangoTestCase):
             password=password,
         )
         return user
+
+    def create_user_and_client(self, username, email=None, password=None):
+        user = self.create_user(username, email, password)
+        user_client = APIClient()
+        user_client.force_authenticate(user=user)
+        return user, user_client
 
     def create_tweet(self, user, content=None):
         if not content:
