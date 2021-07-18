@@ -2,6 +2,8 @@ from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from tweets.models import Tweet
 from comments.models import Comment
+from tweets.models import TweetPhoto
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 LIST_URL = '/api/tweets/'
 CREATE_URL = '/api/tweets/'
@@ -185,6 +187,83 @@ class TweetTest(TestCase):
         )
         self.assertEqual(response.data['tweet'][0]['comment_count'], 1)
 
+    def test_create_with_files(self):
+        # allow empty file list
+        response = self.user1_client.post(CREATE_URL, {
+            'content': 'default content',
+            'files': [],
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 0)
+
+        # allow single file
+        dummy_file = SimpleUploadedFile(
+            name='sample-image',
+            content=str.encode('sample-image'),
+            content_type='image/jpeg',
+        )
+        response = self.user1_client.post(CREATE_URL, {
+            'content': 'default content',
+            'files': [dummy_file],
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 1)
+
+        # all multiple files
+        dummy_files = [
+            SimpleUploadedFile(
+                name='sample-image-{}.jpg'.format(i),
+                content=str.encode('sample-image-{}'.format(i)),
+                content_type='image/jpeg',
+            )
+            for i in range(9)
+        ]
+        response = self.user1_client.post(CREATE_URL, {
+            'content': 'default content',
+            'files': dummy_files,
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(TweetPhoto.objects.count(), 10)
+        # urls should be in order
+        self.assertEqual(len(response.data['tweet']['photo_urls']), 9)
+        self.assertTrue('sample-image-0' in response.data['tweet']['photo_urls'][0])
+        self.assertTrue('sample-image-1' in response.data['tweet']['photo_urls'][1])
+
+        # allow 9 files at most
+        dummy_files = [
+            SimpleUploadedFile(
+                name='sample-image-{}.jpg'.format(i),
+                content=str.encode('sample-image-{}'.format(i)),
+                content_type='image/jpeg',
+            )
+            for i in range(10) # must <= 9
+        ]
+        response = self.user1_client.post(CREATE_URL, {
+            'content': 'default content',
+            'files': [dummy_files],
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_retrieve_with_files(self):
+        dummy_files = [
+            SimpleUploadedFile(
+                name='sample-image-{}.jpg'.format(i),
+                content=str.encode('sample-image-{}'.format(i)),
+                content_type='image/jpeg',
+            )
+            for i in range(5)
+        ]
+        response = self.user1_client.post(CREATE_URL, {
+            'content': 'default content',
+            'files': dummy_files,
+        })
+        tweet_id = response.data['tweet']['id']
+
+        # retrieve tweet with photo urls
+        response = self.user2_client.get(RETRIEVE_URL.format(tweet_id))
+        self.assertEqual(len(response.data['photo_urls']), 5)
+        self.assertTrue('sample-image-0' in response.data['photo_urls'][0])
+        self.assertTrue('sample-image-1' in response.data['photo_urls'][1])
 
 
 

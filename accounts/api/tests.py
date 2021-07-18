@@ -204,11 +204,6 @@ class UserProfileTest(TestCase):
         # user1 create profile
         profile = self.user1.profile
         url_profile_update = '/api/userprofiles/{}/'.format(profile.id)
-        dummy_img = SimpleUploadedFile(
-                name='my-cavatar.jpg',
-                content=str.encode('a fake image'),
-                content_type='image/jpeg',
-            )
         data = {
             'nickname': 'newnickname',
             'avatar': SimpleUploadedFile(

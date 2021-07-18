@@ -5,6 +5,7 @@ from tweets.constants import TweetPhotoStatus
 from tweets.models import Tweet
 from tweets.models import TweetPhoto
 from utils.time_helper import utc_now
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 
 class TweetTest(TestCase):
@@ -48,3 +49,25 @@ class TweetPhotoTest(TestCase):
         self.assertEqual(tweetphoto2.status, TweetPhotoStatus.PENDING)
         tweetphoto2.delete()
         self.assertEqual(TweetPhoto.objects.count(), 1)
+
+        # bulk_create
+        files = [
+            SimpleUploadedFile(
+                name='dummy image {}.jpg'.format(i),
+                content=str.encode('dummy image'),
+                content_type='image/jpeg',
+            )
+            for i in range(5)
+        ]
+        photos = [
+            TweetPhoto(
+                user=self.user1,
+                tweet=self.tweet,
+                file=file,
+                order = i,
+            )
+            for i, file in enumerate(files)
+        ]
+        TweetPhoto.objects.bulk_create(photos)
+        self.assertEqual(TweetPhoto.objects.count(), 6)
+

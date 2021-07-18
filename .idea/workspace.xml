@@ -3,9 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testing/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/testing/testcases.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/accounts/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/api/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tweets/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/constants.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tweets/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/tests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
