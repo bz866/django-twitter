@@ -10,3 +10,4 @@ TWEET_PHOTO_STAUS_CHOICES = (
     (TweetPhotoStatus.DELETED, 'Deleted'),
 )
 
+TWEET_PHOTOS_UPLOAD_LIMIT = 9
