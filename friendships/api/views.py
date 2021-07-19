@@ -1,44 +1,42 @@
-from friendships.models import Friendship
-from friendships.api.serializers import (
-    FriendshipFollowerSerializer,
-    FriendshipFollowingSerializer,
-    FriendshipCreateSerializer,
-)
 from django.contrib.auth.models import User
+from friendships.api.paginations import FriendShipPagination
+from friendships.api.serializers import FriendshipCreateSerializer
+from friendships.api.serializers import FriendshipFollowerSerializer
+from friendships.api.serializers import FriendshipFollowingSerializer
+from friendships.models import Friendship
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework import status
 from utils.decorators import require_params
 
 
-class FriendshipViewSet(
-        viewsets.GenericViewSet,
-        # mixins.CreateModelMixin,
-        # mixins.UpdateModelMixin,
-    ):
+class FriendshipViewSet(viewsets.GenericViewSet):
     serializer_class = FriendshipCreateSerializer
     queryset = User.objects.all()
+    pagination_class = FriendShipPagination
 
     def get_permissions(self):
         if self.action == 'list':
-            return [AllowAny(),]
+            return [IsAuthenticated(),]
         return [IsAuthenticated(),]
 
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
     def followers(self, request, pk):
         # select out followers for a specific user
         friendships = Friendship.objects.filter(to_user_id=pk)
-        serializer = FriendshipFollowerSerializer(friendships, many=True)
-        return Response({'friendship': serializer.data})
+        page = self.paginate_queryset(friendships)
+        serializer = FriendshipFollowerSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
     def followings(self, request, pk):
         # select out followings for a specific user
         friendships = Friendship.objects.filter(from_user_id=pk)
-        serializer = FriendshipFollowingSerializer(friendships, many=True)
-        return Response({'friendship': serializer.data})
+        page = self.paginate_queryset(friendships)
+        serializer = FriendshipFollowingSerializer(page, many=True, context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
     @require_params(require_attrs='query_params', params=['type', 'user_id'])
     def list(self, request):
@@ -55,12 +53,22 @@ class FriendshipViewSet(
         user_id = request.query_params['user_id']
         if query_type == 'followers':
             friendships = Friendship.objects.filter(to_user_id=user_id)
-            serializer = FriendshipFollowerSerializer(friendships, many=True)
+            page = self.paginate_queryset(friendships)
+            serializer = FriendshipFollowerSerializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
         else:
             friendships = Friendship.objects.filter(from_user_id=user_id)
-            serializer = FriendshipFollowingSerializer(friendships, many=True)
+            page = self.paginate_queryset(friendships)
+            serializer = FriendshipFollowingSerializer(
+                page,
+                many=True,
+                context={'request': request},
+            )
 
-        return Response({'friendship': serializer.data})
+        return self.get_paginated_response(serializer.data)
 
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
     def follow(self, request, pk):
