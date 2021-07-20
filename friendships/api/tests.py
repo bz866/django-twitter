@@ -195,8 +195,8 @@ class FriendShipPaginationTest(TestCase):
         Friendship.objects.create(from_user=self.user3, to_user=self.user1)
         Friendship.objects.create(from_user=self.user2, to_user=self.user3)
         #          user1
-        #       /       *\\
-        #     */          \\*
+        #       /*       *\\
+        #     /          \\*
         #     user3   *--  user2
 
     def test_friendship_pagination(self):

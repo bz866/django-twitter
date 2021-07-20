@@ -278,7 +278,7 @@ class TweetPaginationTest(TestCase):
         ]
         self.tweets = self.tweets[::-1] # order by created_at in descending
 
-    def test_tweet_endless_pagination(self):
+    def test_tweets_endless_pagination(self):
         response = self.user1_client.get(
             TWEET_LIST_URL,
             {'user_id': self.user1.id}
