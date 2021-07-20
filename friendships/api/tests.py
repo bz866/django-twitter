@@ -1,6 +1,10 @@
-from testing.testcases import TestCase
-from rest_framework.test import APIClient
+from django.conf import settings
+from django.core.cache import caches
 from friendships.models import Friendship
+from rest_framework.test import APIClient
+from testing.testcases import TestCase
+
+cache = caches['testing'] if settings.TESTING else caches['default']
 
 FOLLOWERS_URL = '/api/friendships/{}/followers/'
 FOLLOWINGS_URL = '/api/friendships/{}/followings/'
@@ -13,6 +17,7 @@ UNFOLLOW_URL = '/api/friendships/{}/unfollow/'
 class FriendshipTest(TestCase):
 
     def setUp(self):
+        self.clear_cache()
         # client 1
         self.user1_client = APIClient()
         self.user1 = self.create_user(
@@ -186,6 +191,7 @@ class FriendshipTest(TestCase):
 class FriendShipPaginationTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.user3, self.user3_client = self.create_user_and_client(username='user3')

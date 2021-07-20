@@ -1,7 +1,6 @@
-from rest_framework import viewsets
-from rest_framework.response import Response
-from newsfeeds.models import NewsFeed
 from newsfeeds.api.serializers import NewsFeedSerializer
+from newsfeeds.models import NewsFeed
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from utils.paginations import EndlessPagination
 
