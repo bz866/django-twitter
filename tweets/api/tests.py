@@ -41,17 +41,17 @@ class TweetTest(TestCase):
         # users have right number of tweets listed
         response = self.user1_client.get(LIST_URL, {'user_id': self.user1.id})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['tweet']), 3)
-        self.assertEqual(response.data['tweet'][0]['user']['username'], 'username1')
+        self.assertEqual(len(response.data['results']), 3)
+        self.assertEqual(response.data['results'][0]['user']['username'], 'username1')
         response = self.user2_client.get(LIST_URL, {'user_id': self.user2.id})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['tweet']), 2)
-        self.assertEqual(response.data['tweet'][0]['user']['username'], 'username2')
+        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(response.data['results'][0]['user']['username'], 'username2')
 
         # tweets should be listed order by created_at in descending order
         response = self.user1_client.get(LIST_URL, {'user_id': self.user1.id})
-        self.assertEqual(response.data['tweet'][0]['id'], self.user1_tweets[2].id)
-        self.assertEqual(response.data['tweet'][1]['id'], self.user1_tweets[1].id)
+        self.assertEqual(response.data['results'][0]['id'], self.user1_tweets[2].id)
+        self.assertEqual(response.data['results'][1]['id'], self.user1_tweets[1].id)
 
     def test_create(self):
         # anonymous user can not create tweet
@@ -180,12 +180,12 @@ class TweetTest(TestCase):
             TWEET_LIST_URL,
             {'user_id': self.user1.id},
         )
-        self.assertEqual(response.data['tweet'][0]['comment_count'], 2)
+        self.assertEqual(response.data['results'][0]['comment_count'], 2)
         response = self.user2_client.get(
             TWEET_LIST_URL,
             {'user_id': self.user2.id},
         )
-        self.assertEqual(response.data['tweet'][0]['comment_count'], 1)
+        self.assertEqual(response.data['results'][0]['comment_count'], 1)
 
     def test_create_with_files(self):
         # allow empty file list
@@ -264,6 +264,88 @@ class TweetTest(TestCase):
         self.assertEqual(len(response.data['photo_urls']), 5)
         self.assertTrue('sample-image-0' in response.data['photo_urls'][0])
         self.assertTrue('sample-image-1' in response.data['photo_urls'][1])
+
+
+class TweetPaginationTest(TestCase):
+
+    def setUp(self) -> None:
+        self.user1, self.user1_client = self.create_user_and_client(username='user1')
+        # dummy tweets
+        self.tweets = []
+        self.tweets = [
+            self.create_tweet(user=self.user1)
+            for i in range(41)
+        ]
+        self.tweets = self.tweets[::-1] # order by created_at in descending
+
+    def test_tweet_endless_pagination(self):
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id}
+        )
+        self.assertEqual(response.status_code, 200)
+        # default first page
+        self.assertEqual(len(response.data['results']), 20)
+        self.assertTrue(response.data['has_next_page'])
+        # tweets list in created_at descending order
+        self.assertEqual(response.data['results'][0]['id'], self.tweets[0].id)
+        self.assertEqual(response.data['results'][1]['id'], self.tweets[1].id)
+
+        # load to the second page
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id, 'created_at__lt': self.tweets[19].created_at},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 20)
+        self.assertTrue(response.data['has_next_page'])
+        # tweets list in created_at descending order
+        self.assertEqual(response.data['results'][0]['id'], self.tweets[20].id)
+        self.assertEqual(response.data['results'][1]['id'], self.tweets[21].id)
+
+        # load to the third page
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id, 'created_at__lt': self.tweets[39].created_at}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertFalse(response.data['has_next_page'])
+        self.assertEqual(response.data['results'][0]['id'], self.tweets[-1].id)
+        self.assertEqual(response.data['results'][0]['id'], self.tweets[40].id)
+
+        # dummy new tweets
+        new_tweets = [
+            self.create_tweet(user=self.user1)
+            for i in range(12)
+        ]
+        new_tweets = new_tweets[::-1]
+        all_tweets = new_tweets + self.tweets
+
+        # refresh to have the most recent page
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id, 'created_at__gt': self.tweets[0].created_at}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 20)
+        self.assertTrue(response.data['has_next_page'])
+        self.assertEqual(response.data['results'][0]['id'], all_tweets[0].id)
+        self.assertEqual(response.data['results'][1]['id'], all_tweets[1].id)
+
+        # load to the second page after refreshing
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id, 'created_at__lt': all_tweets[19].created_at}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 20)
+        self.assertTrue(response.data['has_next_page'])
+        self.assertEqual(response.data['results'][2]['id'], all_tweets[22].id)
+        self.assertEqual(response.data['results'][2]['id'], self.tweets[10].id)
+        self.assertEqual(response.data['results'][3]['id'], all_tweets[23].id)
+        self.assertEqual(response.data['results'][3]['id'], self.tweets[11].id)
+
 
 
 
