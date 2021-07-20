@@ -201,12 +201,12 @@ class CommentTest(TestCase):
             TWEET_LIST_URL,
             {'user_id': self.user1.id},
         )
-        self.assertEqual(response.data['tweet'][0]['comment_count'], 2)
+        self.assertEqual(response.data['results'][0]['comment_count'], 2)
         response = self.user2_client.get(
             TWEET_LIST_URL,
             {'user_id': self.user2.id},
         )
-        self.assertEqual(response.data['tweet'][0]['comment_count'], 1)
+        self.assertEqual(response.data['results'][0]['comment_count'], 1)
 
         # check comment like in Comment LIST
         response = self.user1_client.get(COMMENT_LIST_URL, {'tweet_id': self.tweet1.id})
