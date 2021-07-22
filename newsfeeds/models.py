@@ -1,6 +1,9 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 from tweets.models import Tweet
+from utils.memcached_helpers import MemcachedHelper
+from django.db.models.signals import pre_delete, post_save
+from utils.listeners import invalidate_object_cache
 
 
 # Create your models here.
@@ -17,3 +20,8 @@ class NewsFeed(models.Model):
 
     def __str__(self):
         return f'{self.created_at} inbox of {self.user}: {self.tweet}'
+
+    @property
+    def cached_tweet(self):
+        return MemcachedHelper.get_object_throught_cache(Tweet, self.tweet_id)
+

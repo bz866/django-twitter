@@ -35,20 +35,3 @@ class LikeTest(TestCase):
         self.create_like(self.user1, self.tweet1)
         self.assertEqual(Like.objects.count(), 4)
 
-    def test_user_cache(self):
-        profile1 = self.user1.profile
-        profile1.nickname = 'user1_new_nickname'
-        profile1.save()
-
-        self.create_newsfeed(self.user3, self.create_tweet(self.user1))
-        self.create_newsfeed(self.user3, self.create_tweet(self.user2))
-
-        response = self.user3_client.get(NEWSFEEDS_URL)
-        results = response.data['results']
-        self.assertEqual(results[0]['tweet']['user']['username'], 'user2')
-        self.assertEqual(results[1]['tweet']['user']['username'], 'user1')
-        self.assertEqual(
-            results[0]['tweet']['user']['nickname'],
-            'user1_new_nickname'
-        )
-

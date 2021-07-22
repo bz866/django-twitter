@@ -1,9 +1,12 @@
 from django.contrib.auth.models import User
-from django.db import models
-from utils.time_helper import utc_now
-from likes.models import Like
 from django.contrib.contenttypes.fields import ContentType
+from django.db import models
+from django.db.models.signals import post_save
+from likes.models import Like
 from tweets.constants import TWEET_PHOTO_STAUS_CHOICES, TweetPhotoStatus
+from utils.listeners import invalidate_object_cache
+from utils.time_helper import utc_now
+from utils.memcached_helpers import MemcachedHelper
 
 
 class Tweet(models.Model):
@@ -31,6 +34,10 @@ class Tweet(models.Model):
 
     def __str__(self):
         return f'{self.created_at} {self.user}: {self.content}'
+
+    @property
+    def cached_user(self):
+        return MemcachedHelper.get_object_throught_cache(User, self.user_id)
 
 
 class TweetPhoto(models.Model):
@@ -63,3 +70,6 @@ class TweetPhoto(models.Model):
     def __str__(self):
         return f'{self.user_id} {self.tweet_id} : {self.file}'
 
+
+# clear cache in create()
+post_save.connect(invalidate_object_cache, sender=Tweet)

@@ -7,6 +7,7 @@ from newsfeeds.services import NewsFeedService
 LIST_NEWSFEED_URL = '/api/newsfeeds/'
 POST_TWEET_URL = '/api/tweets/'
 
+
 class NewsFeedTest(TestCase):
 
     def setUp(self) -> None:
@@ -200,6 +201,70 @@ class NewsFeedPagination(TestCase):
             response.data['results'][-1]['tweet']['id'],
             self.user1_tweets_data[9]['id']
         )
+
+
+class NewsFeedCacheTest(TestCase):
+
+    def setUp(self):
+        self.clear_cache()
+        self.user1, self.user1_client = self.create_user_and_client(username='user1')
+        self.user2, self.user2_client = self.create_user_and_client(username='user2')
+
+        # create followings and followers for user2
+        for i in range(2):
+            follower = self.create_user('user1_follower{}'.format(i))
+            Friendship.objects.create(from_user=follower, to_user=self.user1)
+        for i in range(3):
+            following = self.create_user('user2_following{}'.format(i))
+            Friendship.objects.create(from_user=self.user2, to_user=following)
+
+    def test_user_cache(self):
+        profile = self.user2.profile
+        profile.nickname = 'user2_new_nickname'
+        profile.save()
+
+        self.assertEqual(self.user1.username, 'user1')
+        self.create_newsfeed(self.user2, self.create_tweet(self.user1))
+        self.create_newsfeed(self.user2, self.create_tweet(self.user2))
+
+        response = self.user2_client.get(LIST_NEWSFEED_URL)
+        results = response.data['results']
+        self.assertEqual(results[0]['tweet']['user']['username'], 'user2')
+        self.assertEqual(results[0]['tweet']['user']['nickname'], 'user2_new_nickname')
+        self.assertEqual(results[1]['tweet']['user']['username'], 'user1')
+
+        self.user1.username = 'user1'
+        self.user1.save()
+        profile.nickname = 'user1_new_nickname'
+        profile.save()
+
+        response = self.user2_client.get(LIST_NEWSFEED_URL)
+        results = response.data['results']
+        self.assertEqual(results[0]['tweet']['user']['username'], 'user2')
+        self.assertEqual(results[0]['tweet']['user']['nickname'], 'user1_new_nickname')
+        self.assertEqual(results[1]['tweet']['user']['username'], 'user1')
+
+    def test_tweet_cache(self):
+        tweet = self.create_tweet(self.user1, 'content1')
+        self.create_newsfeed(self.user2, tweet)
+        response = self.user2_client.get(LIST_NEWSFEED_URL)
+        results = response.data['results']
+        self.assertEqual(results[0]['tweet']['user']['username'], 'user1')
+        self.assertEqual(results[0]['tweet']['content'], 'content1')
+
+        # update username
+        self.user1.username = 'user1'
+        self.user1.save()
+        response = self.user2_client.get(LIST_NEWSFEED_URL)
+        results = response.data['results']
+        self.assertEqual(results[0]['tweet']['user']['username'], 'user1')
+
+        # update content
+        tweet.content = 'content2'
+        tweet.save()
+        response = self.user2_client.get(LIST_NEWSFEED_URL)
+        results = response.data['results']
+        self.assertEqual(results[0]['tweet']['content'], 'content2')
 
 
 
