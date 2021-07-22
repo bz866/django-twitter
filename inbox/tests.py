@@ -6,6 +6,7 @@ from notifications.models import Notification
 class NotificationTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         # dummy users
         self.user1 = self.create_user(username='user1')
         self.user2 = self.create_user(username='user2')

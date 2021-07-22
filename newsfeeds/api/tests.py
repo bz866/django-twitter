@@ -10,6 +10,7 @@ POST_TWEET_URL = '/api/tweets/'
 class NewsFeedTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         # dummy users
         self.user1, self.user1_client = self.create_user_and_client(
             username='username1'

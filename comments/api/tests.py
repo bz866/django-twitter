@@ -17,6 +17,7 @@ NEWSFEED_LIST_URL = '/api/newsfeeds/'
 class CommentTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         # dummy user
         self.user1_client = APIClient()
         self.user1 = self.create_user(username='user1')
