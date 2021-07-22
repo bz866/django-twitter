@@ -10,6 +10,7 @@ NOTIFICATION_LIST_URL = '/api/notifications/'
 class NotificationTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         # dummy user
         self.user1 = self.create_user(username='user1')
         self.user1_client = APIClient()
@@ -75,6 +76,7 @@ class NotificationTest(TestCase):
 class NotificationApiTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         # dummy user
         self.user1 = self.create_user(username='user1')
         self.user1_client = APIClient()

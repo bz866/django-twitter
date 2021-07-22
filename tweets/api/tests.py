@@ -17,6 +17,7 @@ NEWSFEED_LIST_URL = '/api/newsfeeds/'
 class TweetTest(TestCase):
 
     def setUp(self):
+        self.clear_cache()
         self.user1_client = APIClient()
         self.user1 = self.create_user(username='username1')
         self.user1_client.force_authenticate(user=self.user1)
@@ -269,6 +270,7 @@ class TweetTest(TestCase):
 class TweetPaginationTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         # dummy tweets
         self.tweets = []

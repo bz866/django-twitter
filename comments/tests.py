@@ -1,4 +1,4 @@
-from django.test import TestCase
+from testing.testcases import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 from tweets.models import Tweet
@@ -9,6 +9,7 @@ from comments.models import Comment
 class CommentModelTest(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
         self.user_1_client = APIClient()
         self.user_1 = User.objects.create_user(username='username1', password='defaultpw')
         self.user_1_client.force_authenticate(self.user_1)
