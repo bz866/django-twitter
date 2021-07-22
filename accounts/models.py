@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import pre_delete, post_save
-from accounts.listeners import invalidate_user_cache
+from utils.listeners import invalidate_object_cache
 from accounts.listeners import invalidate_profile_cache
 
 
@@ -37,8 +37,8 @@ def get_profile(user):
 User.profile = property(get_profile)
 
 # clear cache for User in create() and delete()
-pre_delete.connect(invalidate_user_cache, sender=User)
-post_save.connect(invalidate_user_cache, sender=User)
+pre_delete.connect(invalidate_object_cache, sender=User)
+post_save.connect(invalidate_object_cache, sender=User)
 
 # clear cache for UserProfile in create() and delete()
 pre_delete.connect(invalidate_profile_cache, sender=UserProfile)

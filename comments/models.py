@@ -3,16 +3,17 @@ from django.contrib.auth.models import User
 from tweets.models import Tweet
 from likes.models import Like
 from django.contrib.contenttypes.fields import ContentType
-from accounts.services import UserService
+from utils.memcached_helpers import MemcachedHelper
 
 
-# Create your models here.
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     tweet = models.ForeignKey(Tweet, on_delete=models.SET_NULL, null=True)
     content = models.TextField(max_length=140)
-    created_at = models.DateTimeField(auto_now_add=True) # updates on creation only
-    updated_at = models.DateTimeField(auto_now=True) # take precedence, updates field each time
+    # updates on creation only
+    created_at = models.DateTimeField(auto_now_add=True)
+    # take precedence, updates field each time
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         index_together = (('tweet', 'created_at'), )
@@ -30,4 +31,4 @@ class Comment(models.Model):
 
     @property
     def cached_user(self):
-        return UserService.get_user_through_cache(self.user_id)
+        return MemcachedHelper.get_object_throught_cache(User, self.user_id)
