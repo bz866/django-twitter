@@ -7,6 +7,7 @@ from likes.models import Like
 from newsfeeds.models import NewsFeed
 from rest_framework.test import APIClient
 from tweets.models import Tweet
+from utils.redis_client import RedisClient
 
 
 class TestCase(DjangoTestCase):
