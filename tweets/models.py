@@ -7,6 +7,7 @@ from tweets.constants import TWEET_PHOTO_STAUS_CHOICES, TweetPhotoStatus
 from utils.listeners import invalidate_object_cache
 from utils.time_helper import utc_now
 from utils.memcached_helpers import MemcachedHelper
+from tweets.listeners import push_tweet_to_cache
 
 
 class Tweet(models.Model):
@@ -73,3 +74,5 @@ class TweetPhoto(models.Model):
 
 # clear cache in create()
 post_save.connect(invalidate_object_cache, sender=Tweet)
+# clear redis cache in create()
+post_save.connect(push_tweet_to_cache, sender=Tweet)
