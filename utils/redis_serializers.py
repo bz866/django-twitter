@@ -1,4 +1,4 @@
-from json_encoder import JSONEncoder
+from utils.json_encoder import JSONEncoder
 from django.core import serializers
 
 
@@ -16,6 +16,5 @@ class DjangoModelSerializer:
     def deserialize(cls, serialized_data):
         return list(serializers.deserialize(
             format='json',
-            serialized_data=serialized_data,
-            cls=JSONEncoder,
+            stream_or_string=serialized_data,
         ))[0].object

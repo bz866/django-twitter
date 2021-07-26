@@ -6,12 +6,14 @@ from tweets.models import Tweet
 from tweets.models import TweetPhoto
 from utils.time_helper import utc_now
 from django.core.files.uploadedfile import SimpleUploadedFile
+from utils.redis_client import RedisClient
 
 
 class TweetTest(TestCase):
 
     def setUp(self):
         self.clear_cache()
+        RedisClient.clear()
         self.user_1 = User.objects.create_user(username='defaultuser1', password='defaultpw')
         self.user_2 = User.objects.create_user(username='dafaultuser2', password='defaultpw')
 
@@ -29,6 +31,7 @@ class TweetPhotoTest(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
+        RedisClient.clear()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.tweet = self.create_tweet(user=self.user1)

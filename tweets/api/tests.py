@@ -4,6 +4,7 @@ from tweets.models import Tweet
 from comments.models import Comment
 from tweets.models import TweetPhoto
 from django.core.files.uploadedfile import SimpleUploadedFile
+from utils.redis_client import RedisClient
 
 LIST_URL = '/api/tweets/'
 CREATE_URL = '/api/tweets/'
@@ -18,6 +19,7 @@ class TweetTest(TestCase):
 
     def setUp(self):
         self.clear_cache()
+        RedisClient.clear()
         self.user1_client = APIClient()
         self.user1 = self.create_user(username='username1')
         self.user1_client.force_authenticate(user=self.user1)
@@ -271,6 +273,7 @@ class TweetPaginationTest(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
+        RedisClient.clear()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         # dummy tweets
         self.tweets = []
@@ -330,23 +333,46 @@ class TweetPaginationTest(TestCase):
             {'user_id': self.user1.id, 'created_at__gt': self.tweets[0].created_at}
         )
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 12)
+        self.assertFalse(response.data['has_next_page'])
+        self.assertEqual(response.data['results'][0]['id'], all_tweets[0].id)
+        self.assertEqual(response.data['results'][1]['id'], all_tweets[1].id)
+
+        # dummy new tweets
+        new_tweets2 = [
+            self.create_tweet(user=self.user1)
+            for i in range(22)
+        ]
+        new_tweets2 = new_tweets2[::-1]
+        all_tweets = new_tweets2 + new_tweets + self.tweets
+
+        # refresh to have the most recent page
+        response = self.user1_client.get(
+            TWEET_LIST_URL,
+            {'user_id': self.user1.id,
+             'created_at__gt': new_tweets[0].created_at}
+        )
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 20)
         self.assertTrue(response.data['has_next_page'])
         self.assertEqual(response.data['results'][0]['id'], all_tweets[0].id)
         self.assertEqual(response.data['results'][1]['id'], all_tweets[1].id)
 
-        # load to the second page after refreshing
-        response = self.user1_client.get(
-            TWEET_LIST_URL,
-            {'user_id': self.user1.id, 'created_at__lt': all_tweets[19].created_at}
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['results']), 20)
-        self.assertTrue(response.data['has_next_page'])
-        self.assertEqual(response.data['results'][2]['id'], all_tweets[22].id)
-        self.assertEqual(response.data['results'][2]['id'], self.tweets[10].id)
-        self.assertEqual(response.data['results'][3]['id'], all_tweets[23].id)
-        self.assertEqual(response.data['results'][3]['id'], self.tweets[11].id)
+
+
+
+        # # load to the second page after refreshing
+        # response = self.user1_client.get(
+        #     TWEET_LIST_URL,
+        #     {'user_id': self.user1.id, 'created_at__lt': all_tweets[19].created_at}
+        # )
+        # self.assertEqual(response.status_code, 200)
+        # self.assertEqual(len(response.data['results']), 20)
+        # self.assertTrue(response.data['has_next_page'])
+        # self.assertEqual(response.data['results'][2]['id'], all_tweets[22].id)
+        # self.assertEqual(response.data['results'][2]['id'], self.tweets[10].id)
+        # self.assertEqual(response.data['results'][3]['id'], all_tweets[23].id)
+        # self.assertEqual(response.data['results'][3]['id'], self.tweets[11].id)
 
 
 
