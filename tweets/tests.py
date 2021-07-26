@@ -1,12 +1,16 @@
 from datetime import timedelta
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from testing.testcases import TestCase
 from tweets.constants import TweetPhotoStatus
 from tweets.models import Tweet
 from tweets.models import TweetPhoto
-from utils.time_helper import utc_now
-from django.core.files.uploadedfile import SimpleUploadedFile
+from tweets.services import TweetService
+from utils.cache import USER_TWEET_PATTERN
 from utils.redis_client import RedisClient
+from utils.time_helper import utc_now
+
+LIST_TWEET_URL = '/api/tweets/'
 
 
 class TweetTest(TestCase):
@@ -76,3 +80,65 @@ class TweetPhotoTest(TestCase):
         TweetPhoto.objects.bulk_create(photos)
         self.assertEqual(TweetPhoto.objects.count(), 6)
 
+
+class TweetCacheTest(TestCase):
+    def setUp(self) -> None:
+        self.clear_cache()
+        RedisClient.clear()
+        self.user1, self.user1_client = self.create_user_and_client(username='user1')
+        self.user2, self.user2_client = self.create_user_and_client(username='user2')
+
+    def test_tweet_cache(self):
+        tweet_ids = [
+            self.create_tweet(user=self.user1).id
+            for i in range(3)
+        ]
+        tweet_ids = tweet_ids[::-1]
+
+        # cache miss
+        response = self.user2_client.get(LIST_TWEET_URL, {
+            'user_id': self.user1.id
+        })
+        self.assertEqual(len(response.data['results']), 3)
+        self.assertEqual(
+            [response.data['results'][i]['id'] for i in range(3)],
+            tweet_ids
+        )
+
+        # cache hit
+        response = self.user2_client.get(LIST_TWEET_URL, {
+            'user_id': self.user1.id
+        })
+        self.assertEqual(len(response.data['results']), 3)
+        self.assertEqual(
+            [response.data['results'][i]['id'] for i in range(3)],
+            tweet_ids
+        )
+
+        # create a new tweet, reload cache
+        new_tweet = self.create_tweet(user=self.user1)
+        tweet_ids.insert(0, new_tweet.id)
+        response = self.user2_client.get(LIST_TWEET_URL, {
+            'user_id': self.user1.id
+        })
+        self.assertEqual(len(response.data['results']), 4)
+        self.assertEqual(
+            [response.data['results'][i]['id'] for i in range(4)],
+            tweet_ids
+        )
+
+    def test_create_tweet_before_get_cached_tweets(self):
+        tweet1 = self.create_tweet(user=self.user1)
+
+        RedisClient.clear()
+        conn = RedisClient.get_connection()
+        name = USER_TWEET_PATTERN.format(user_id=self.user1.id)
+        self.assertFalse(conn.exists(name))
+        tweet2 = self.create_tweet(user=self.user1)
+        self.assertTrue(conn.exists(name))
+
+        tweets = TweetService.load_tweets_through_cache(user_id=self.user1.id)
+        self.assertEqual(
+            [t.id for t in tweets],
+            [tweet2.id, tweet1.id]
+        )

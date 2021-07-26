@@ -11,6 +11,7 @@ LOGOUT_URL = "/api/accounts/logout/"
 
 class AccountTest(TestCase):
     def setUp(self):
+        self.clear_cache()
         self.client = APIClient()
         default_user_data = {
             'username': 'defaultuser',

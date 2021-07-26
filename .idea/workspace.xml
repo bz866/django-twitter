@@ -3,15 +3,15 @@
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/accounts/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/api/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/newsfeeds/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/api/tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tweets/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/api/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/newsfeeds/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/newsfeeds/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tweets/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tweets/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tweets/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/cache.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/cache.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/paginations.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/paginations.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/redis_serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/redis_serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/redis_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/redis_helper.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,6 +69,7 @@
       <recent name="$PROJECT_DIR$/friendships/migrations" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/newsfeeds" />
       <recent name="$PROJECT_DIR$/friendships/api" />
       <recent name="$PROJECT_DIR$/friendships" />
       <recent name="$PROJECT_DIR$/utils" />
