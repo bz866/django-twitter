@@ -1,8 +1,7 @@
 from testing.testcases import TestCase
-from rest_framework.test import APIClient
-from django.contrib.auth.models import User
 from friendships.models import Friendship
 from newsfeeds.services import NewsFeedService
+from utils.redis_client import RedisClient
 
 LIST_NEWSFEED_URL = '/api/newsfeeds/'
 POST_TWEET_URL = '/api/tweets/'
@@ -12,6 +11,7 @@ class NewsFeedTest(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
+        RedisClient.clear()
         # dummy users
         self.user1, self.user1_client = self.create_user_and_client(
             username='username1'
@@ -113,6 +113,8 @@ class NewsFeedTest(TestCase):
 class NewsFeedPagination(TestCase):
 
     def setUp(self) -> None:
+        self.clear_cache()
+        RedisClient.clear()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.user3, self.user3_client = self.create_user_and_client(username='user3')
@@ -164,8 +166,7 @@ class NewsFeedPagination(TestCase):
         )
         # load bottom page
         response = self.user2_client.get(LIST_NEWSFEED_URL, {
-            'created_at__lt': response.data['results'][-1]['tweet'][
-                'created_at']
+            'created_at__lt': response.data['results'][-1]['tweet']['created_at']
         })
         self.assertEqual(len(response.data['results']), 1)
         self.assertFalse(response.data['has_next_page'])
@@ -187,8 +188,10 @@ class NewsFeedPagination(TestCase):
         response = self.user2_client.get(LIST_NEWSFEED_URL, {
             'created_at__gt': self.user1_tweets_data[0]['created_at']
         })
-        self.assertEqual(len(response.data['results']), 20)
-        self.assertTrue(response.data['has_next_page'])
+        # newsfeeds created after the tweet
+        # 10 + 1(self.user1_tweets_data[0] tweet's newsfeed created after tweet if self)
+        self.assertEqual(len(response.data['results']), 11)
+        self.assertFalse(response.data['has_next_page'])
         self.assertEqual(
             response.data['results'][0]['tweet']['id'],
             self.user3_tweets_data[0]['id']
@@ -199,7 +202,7 @@ class NewsFeedPagination(TestCase):
         )
         self.assertEqual(
             response.data['results'][-1]['tweet']['id'],
-            self.user1_tweets_data[9]['id']
+            self.user1_tweets_data[0]['id']
         )
 
 
@@ -207,6 +210,7 @@ class NewsFeedCacheTest(TestCase):
 
     def setUp(self):
         self.clear_cache()
+        RedisClient.clear()
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
 

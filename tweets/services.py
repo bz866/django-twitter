@@ -32,4 +32,4 @@ class TweetService:
             user_id=tweet.user_id
         ).order_by('-created_at')
         name = USER_TWEET_PATTERN.format(user_id=tweet.user_id)
-        return RedisHelper.push_tweet_to_cache(name, queryset, tweet)
+        return RedisHelper.push_object_to_cache(name, queryset, tweet)

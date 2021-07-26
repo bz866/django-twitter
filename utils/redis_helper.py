@@ -33,10 +33,10 @@ class RedisHelper:
         return list(queryset)
 
     @classmethod
-    def push_tweet_to_cache(cls, name, queryset, tweet):
+    def push_object_to_cache(cls, name, queryset, object):
         # cache miss, load all tweets from db
         if not cls.conn.exists(name):
             return cls._load_tweets_to_cache(name, queryset)
 
-        serialized_tweet = DjangoModelSerializer.serialize(tweet)
-        cls.conn.lpush(name, serialized_tweet)
+        serialized_object = DjangoModelSerializer.serialize(object)
+        cls.conn.lpush(name, serialized_object)
