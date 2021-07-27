@@ -1,7 +1,8 @@
-from testing.testcases import TestCase
+from django.conf import settings
 from friendships.models import Friendship
+from newsfeeds.models import NewsFeed
 from newsfeeds.services import NewsFeedService
-from utils.redis_client import RedisClient
+from testing.testcases import TestCase
 
 LIST_NEWSFEED_URL = '/api/newsfeeds/'
 POST_TWEET_URL = '/api/tweets/'
@@ -11,7 +12,7 @@ class NewsFeedTest(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
-        RedisClient.clear()
+        
         # dummy users
         self.user1, self.user1_client = self.create_user_and_client(
             username='username1'
@@ -114,7 +115,7 @@ class NewsFeedPagination(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
-        RedisClient.clear()
+        
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.user3, self.user3_client = self.create_user_and_client(username='user3')
@@ -210,7 +211,7 @@ class NewsFeedCacheTest(TestCase):
 
     def setUp(self):
         self.clear_cache()
-        RedisClient.clear()
+        
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
 
@@ -269,6 +270,113 @@ class NewsFeedCacheTest(TestCase):
         response = self.user2_client.get(LIST_NEWSFEED_URL)
         results = response.data['results']
         self.assertEqual(results[0]['tweet']['content'], 'content2')
+
+
+class NewsFeedCacheLimitTest(TestCase):
+
+    def setUp(self) -> None:
+        self.clear_cache()
+        
+        self.user1, self.user1_client = self.create_user_and_client(
+            username='user1')
+        self.user2, self.user2_client = self.create_user_and_client(
+            username='user2')
+        self.user3, self.user3_client = self.create_user_and_client(
+            username='user3')
+        # dummy friendship
+        Friendship.objects.create(from_user=self.user1, to_user=self.user2)
+        Friendship.objects.create(from_user=self.user2, to_user=self.user1)
+        Friendship.objects.create(from_user=self.user3, to_user=self.user1)
+        Friendship.objects.create(from_user=self.user2, to_user=self.user3)
+        #          user1
+        #       /*       *\\
+        #     /            \\*
+        #     user3   *--  user2
+
+    def _next_page_data(self, client, timestamp):
+        response = client.get(LIST_NEWSFEED_URL, {
+            'created_at__lt': timestamp,
+        })
+        return response.data
+
+    def _refresh_data(self, client, timestamp):
+        response = client.get(LIST_NEWSFEED_URL, {
+            'created_at__gt': timestamp,
+        })
+        return response.data
+
+    def _paginate_to_get_newsfeeds(self, client):
+        response = client.get(LIST_NEWSFEED_URL)
+        newsfeeds = response.data['results']
+        while response.data['has_next_page']:
+            response = client.get(LIST_NEWSFEED_URL, {
+                'created_at__lt': response.data['results'][-1]['created_at']
+            })
+            newsfeeds.extend(response.data['results'])
+        return newsfeeds
+
+    def test_newsfeed_cache_limit_pagination(self):
+        limit_size = settings.REDIS_LIST_LENGTH_LIMIT
+        page_size = 20
+        users = [
+            self.create_user(username='dummyuser{}'.format(i))
+            for i in range(5)
+        ]
+        newsfeeds = []
+        for i in range(limit_size + page_size):
+            tweet = self.create_tweet(user=users[i % 5])
+            feed = self.create_newsfeed(user=self.user2, tweet=tweet)
+            newsfeeds.append(feed)
+        newsfeeds = newsfeeds[::-1]
+
+        # newsfeed inside and outside cache
+        cached_newsfeeds = NewsFeedService.load_newsfeeds_through_cache(
+            user_id=self.user2.id
+        )
+        self.assertEqual(len(cached_newsfeeds), limit_size)
+        db_newsfeeds = NewsFeed.objects.filter(user=self.user2)
+        self.assertEqual(len(db_newsfeeds), limit_size+page_size)
+
+        paginated_newsfeeds = self._paginate_to_get_newsfeeds(
+            client=self.user2_client
+        )
+        self.assertEqual(len(paginated_newsfeeds), limit_size+page_size)
+        self.assertEqual(
+            [f['id'] for f in paginated_newsfeeds],
+            [f.id for f in newsfeeds]
+        )
+
+        # new posts fanout to followers' newsfeeds
+        celebrity, celebrity_client = self.create_user_and_client(
+            username='celebrity'
+        )
+        self.create_friendship(from_user=self.user2, to_user=celebrity)
+        tweet_celebrity = self.create_tweet(user=celebrity)
+        NewsFeedService.fanout_to_followers(tweet_celebrity)
+
+        def _test_newsfeeds_after_new_feed_pushed():
+            db_newsfeeds = NewsFeed.objects.filter(user=self.user2)
+            self.assertEqual(len(db_newsfeeds), limit_size+page_size+1)
+            new_paginated_newsfeed = self._paginate_to_get_newsfeeds(
+                client=self.user2_client
+            )
+            self.assertEqual(
+                new_paginated_newsfeed[0]['tweet']['id'],
+                tweet_celebrity.id
+            )
+            for i in range(limit_size+page_size):
+                self.assertEqual(
+                    new_paginated_newsfeed[i+1]['id'],
+                    newsfeeds[i].id
+                )
+
+        _test_newsfeeds_after_new_feed_pushed()
+
+        # keys expire
+        self.clear_cache()
+        _test_newsfeeds_after_new_feed_pushed()
+
+
 
 
 

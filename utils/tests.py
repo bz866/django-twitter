@@ -5,7 +5,7 @@ from utils.redis_client import RedisClient
 class RedisTest(TestCase):
 
     def setUp(self) -> None:
-        RedisClient.clear()
+        self.clear_cache()
 
     def testRedisClient(self):
         conn = RedisClient.get_connection()
@@ -14,5 +14,5 @@ class RedisTest(TestCase):
             conn.lpush('testkey', f'{i}')
         self.assertEqual(conn.lrange('testkey', 0, -1), [b'2', b'1', b'0'])
 
-        RedisClient.clear()
+        self.clear_cache()
         self.assertEqual(conn.lrange('testkey', 0, -1), [])

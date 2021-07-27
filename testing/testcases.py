@@ -7,6 +7,7 @@ from likes.models import Like
 from newsfeeds.models import NewsFeed
 from rest_framework.test import APIClient
 from tweets.models import Tweet
+from friendships.models import Friendship
 from utils.redis_client import RedisClient
 
 
@@ -14,6 +15,7 @@ class TestCase(DjangoTestCase):
 
     def clear_cache(self):
         caches['testing'].clear()
+        RedisClient.clear()
 
     @property
     def anonymous_client(self):
@@ -59,6 +61,13 @@ class TestCase(DjangoTestCase):
             object_id=object.id, 
         )
         return like
+
+    def create_friendship(self, from_user, to_user):
+        friendship = Friendship.objects.create(
+            from_user=from_user,
+            to_user=to_user,
+        )
+        return friendship
 
     def create_newsfeed(self, user, tweet):
         newsfeed = NewsFeed.objects.create(

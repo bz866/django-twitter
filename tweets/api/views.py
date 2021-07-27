@@ -26,10 +26,16 @@ class TweetViewSet(viewsets.GenericViewSet):
     @require_params(require_attrs='query_params', params=['user_id'])
     def list(self, request):
         # select out all tweets of a specific user
-        tweets = TweetService.load_tweets_through_cache(
+        cached_tweets = TweetService.load_tweets_through_cache(
             user_id=request.query_params['user_id']
         )
-        page = self.paginate_queryset(tweets)
+        page = self.paginator.paginate_cached_list(cached_tweets, request)
+        # cache not enough
+        if not page:
+            tweets = Tweet.objects.filter(
+                user_id=request.query_params['user_id']
+            )
+            page = self.paginate_queryset(tweets)
         serializer = TweetSerializer(
             page,
             context={'request': request},

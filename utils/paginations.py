@@ -2,6 +2,7 @@ from rest_framework import pagination
 from rest_framework import status
 from rest_framework.response import Response
 from dateutil import parser
+from django.conf import settings
 
 
 class EndlessPagination(pagination.BasePagination):
@@ -19,35 +20,27 @@ class EndlessPagination(pagination.BasePagination):
                     objects.append(obj)
                 else:
                     break
-            self.has_next_page = len(objects) > self.page_size
-            return objects[:self.page_size]
+            self.has_next_page = False
+            return objects
 
-        elif 'created_at__lt' in request.query_params:
-            index = 0
+        index = 0
+        if 'created_at__lt' in request.query_params:
             created_at__lt = parser.isoparse(request.query_params['created_at__lt'])
             for index, obj in enumerate(reversed_list):
                 if obj.created_at < created_at__lt:
                     break
             else:
                 reversed_list = []
-            self.has_next_page = len(reversed_list) > index + self.page_size
-            return reversed_list[index:(index+self.page_size)]
-
-        # no timestamp filter
-        else:
-            self.has_next_page = len(reversed_list) > self.page_size
-            return reversed_list[:self.page_size]
+        self.has_next_page = len(reversed_list) > index + self.page_size
+        return reversed_list[index:(index+self.page_size)]
 
     def paginate_queryset(self, queryset, request, view=None):
-        if type(queryset) == list:
-            return self._paginate_ordered_list(queryset, request)
-
         # refresh most updated
         if 'created_at__gt' in request.query_params:
             created_at__gt = request.query_params['created_at__gt']
-            num_new = queryset.filter(created_at__gt=created_at__gt).count()
-            if num_new >= self.page_size:
-                queryset = queryset.filter(created_at__gt=created_at__gt)
+            queryset = queryset.filter(created_at__gt=created_at__gt)
+            self.has_next_page = False
+            return queryset
 
         # scrolling down
         if 'created_at__lt' in request.query_params:
@@ -57,6 +50,20 @@ class EndlessPagination(pagination.BasePagination):
         queryset = queryset[:self.page_size+1]
         self.has_next_page = len(queryset) > self.page_size
         return queryset[:self.page_size]
+
+    def paginate_cached_list(self, cached_list, request, view=None):
+        paginated_list = self._paginate_ordered_list(cached_list, request)
+        # if paginate upward, return all fresh posts
+        if 'created_at__gt' in request.query_params:
+            return paginated_list
+        # if there is next page, cache is still enough
+        if self.has_next_page:
+            return paginated_list
+        # # of cached objects smaller than the cache limit, cache is enough
+        if len(cached_list) < settings.REDIS_LIST_LENGTH_LIMIT:
+            return paginated_list
+        # cache not enough
+        return None
 
     def get_paginated_response(self, data):
         return Response({

@@ -17,10 +17,14 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
         return [AllowAny(), ]
 
     def list(self, request):
-        newsfeeds = NewsFeedService.load_newsfeeds_through_cache(
+        cached_newsfeeds = NewsFeedService.load_newsfeeds_through_cache(
             user_id=request.user.id
         )
-        page = self.paginate_queryset(newsfeeds)
+        page = self.paginator.paginate_cached_list(cached_newsfeeds, request)
+        # cache not enough, access the db directly for extra
+        if not page:
+            newsfeeds = NewsFeed.objects.filter(user_id=request.user.id)
+            page = self.paginate_queryset(newsfeeds)
         serializer = NewsFeedSerializer(
             page,
             context={'request': request},
