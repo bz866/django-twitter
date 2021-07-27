@@ -1,9 +1,11 @@
-from testing.testcases import TestCase
-from rest_framework.test import APIClient
-from tweets.models import Tweet
 from comments.models import Comment
-from tweets.models import TweetPhoto
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework.test import APIClient
+from testing.testcases import TestCase
+from tweets.models import Tweet
+from tweets.models import TweetPhoto
+from tweets.services import TweetService
 from utils.redis_client import RedisClient
 
 LIST_URL = '/api/tweets/'
@@ -353,26 +355,79 @@ class TweetPaginationTest(TestCase):
              'created_at__gt': new_tweets[0].created_at}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['results']), 20)
-        self.assertTrue(response.data['has_next_page'])
+        self.assertEqual(len(response.data['results']), 22)
+        self.assertFalse(response.data['has_next_page'])
         self.assertEqual(response.data['results'][0]['id'], all_tweets[0].id)
         self.assertEqual(response.data['results'][1]['id'], all_tweets[1].id)
 
 
+class TweetCacheLimitTest(TestCase):
 
+    def setUp(self) -> None:
+        self.clear_cache()
 
-        # # load to the second page after refreshing
-        # response = self.user1_client.get(
-        #     TWEET_LIST_URL,
-        #     {'user_id': self.user1.id, 'created_at__lt': all_tweets[19].created_at}
-        # )
-        # self.assertEqual(response.status_code, 200)
-        # self.assertEqual(len(response.data['results']), 20)
-        # self.assertTrue(response.data['has_next_page'])
-        # self.assertEqual(response.data['results'][2]['id'], all_tweets[22].id)
-        # self.assertEqual(response.data['results'][2]['id'], self.tweets[10].id)
-        # self.assertEqual(response.data['results'][3]['id'], all_tweets[23].id)
-        # self.assertEqual(response.data['results'][3]['id'], self.tweets[11].id)
+        self.user1, self.user1_client = self.create_user_and_client(username='user1')
+        self.user2, self.user2_client = self.create_user_and_client(username='user2')
+
+    def _paginate_to_get_tweets(self, client, user_id):
+        response = client.get(TWEET_LIST_URL, {
+            'user_id': user_id,
+        })
+        results = response.data['results']
+        while response.data['has_next_page']:
+            response = client.get(TWEET_LIST_URL, {
+                'user_id': user_id,
+                'created_at__lt': results[-1]['created_at']
+            })
+            results.extend(response.data['results'])
+        return results
+
+    def test_tweet_cache_limit_pagination(self):
+        limit_size = settings.REDIS_LIST_LENGTH_LIMIT
+        page_size = 20
+
+        tweets = [
+            self.create_tweet(user=self.user1)
+            for i in range(limit_size+page_size)
+        ]
+        tweets = tweets[::-1]
+
+        # cached tweets
+        cached_tweets = TweetService.load_tweets_through_cache(user_id=self.user1.id)
+        self.assertEqual(len(cached_tweets), limit_size)
+        db_tweets = Tweet.objects.filter(user_id=self.user1.id)
+        self.assertEqual(len(db_tweets), limit_size+page_size)
+
+        # paginate all tweets
+        paginated_tweets = self._paginate_to_get_tweets(
+            client=self.user2_client,
+            user_id=self.user1.id,
+        )
+        self.assertEqual(len(paginated_tweets), limit_size+page_size)
+        self.assertEqual(
+            [t['id'] for t in paginated_tweets],
+            [t.id for t in tweets]
+        )
+
+        # create new tweet
+        new_tweet = self.create_tweet(user=self.user1)
+
+        def _test_tweets_after_pushed_new_tweet():
+            new_paginated_tweets = self._paginate_to_get_tweets(
+                client=self.user2_client,
+                user_id=self.user1.id,
+            )
+            self.assertEqual(len(new_paginated_tweets), limit_size+page_size+1)
+            self.assertEqual(new_paginated_tweets[0]['id'], new_tweet.id)
+            for i in range(limit_size+page_size):
+                self.assertEqual(tweets[i].id, new_paginated_tweets[i+1]['id'])
+
+        _test_tweets_after_pushed_new_tweet()
+
+        # cache expire
+        self.clear_cache()
+        _test_tweets_after_pushed_new_tweet()
+
 
 
 

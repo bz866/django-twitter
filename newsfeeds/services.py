@@ -33,7 +33,7 @@ class NewsFeedService():
 
     @classmethod
     def push_newsfeed_to_cache(cls, newsfeed):
-        #queryset lazy loading
+        # queryset lazy loading
         queryset = NewsFeed.objects.filter(user_id=newsfeed.user_id)
         name = USER_NEWSFEED_PATTERN.format(user_id=newsfeed.user_id)
         return RedisHelper.push_object_to_cache(name, queryset, newsfeed)

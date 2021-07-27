@@ -11,7 +11,7 @@ class NewsFeedCacheTest(TestCase):
 
     def setUp(self) -> None:
         self.clear_cache()
-        RedisClient.clear()
+        
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.user3, self.user3_client = self.create_user_and_client(username='user3')
@@ -66,7 +66,7 @@ class NewsFeedCacheTest(TestCase):
             tweet=self.create_tweet(user=self.user1)
         )
 
-        RedisClient.clear()
+        self.clear_cache()
         conn = RedisClient.get_connection()
         name = USER_NEWSFEED_PATTERN.format(user_id=self.user2.id)
         self.assertFalse(conn.exists(name))
