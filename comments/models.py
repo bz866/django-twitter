@@ -4,6 +4,8 @@ from tweets.models import Tweet
 from likes.models import Like
 from django.contrib.contenttypes.fields import ContentType
 from utils.memcached_helpers import MemcachedHelper
+from comments.listeners import incr_comment_count, decr_comment_count
+from django.db.models.signals import pre_delete, post_save
 
 
 class Comment(models.Model):
@@ -32,3 +34,8 @@ class Comment(models.Model):
     @property
     def cached_user(self):
         return MemcachedHelper.get_object_throught_cache(User, self.user_id)
+
+
+# clear cached denormalized count in Comment create() and delete()
+post_save.connect(incr_comment_count, sender=Comment)
+pre_delete.connect(decr_comment_count, sender=Comment)

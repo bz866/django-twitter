@@ -15,6 +15,14 @@ class Tweet(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     content = models.TextField(max_length=140)
 
+    # denormalized counts for efficiently accessing, avoid N+1 query problem
+    # fields must have null=True to avoid table being locked
+    # otherwise, the db lock the whole tables in migrations
+    # have another script to fill counts for old posts
+    # db will only have row lock in
+    comment_count = models.IntegerField(default=0, null=True)
+    like_count = models.IntegerField(default=0, null=True)
+
     class Meta:
         index_together = [
             ['user', 'created_at'],
