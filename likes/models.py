@@ -1,9 +1,10 @@
-from accounts.services import UserService
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from utils.memcached_helpers import MemcachedHelper
+from likes.listeners import incr_like_count, decr_like_count
+from django.db.models.signals import post_save, pre_delete
 
 
 class Like(models.Model):
@@ -31,3 +32,7 @@ class Like(models.Model):
     def cached_user(self):
         return MemcachedHelper.get_object_throught_cache(User, self.user_id)
 
+
+# clear cached denormalized count in Like create() and delete()
+post_save.connect(incr_like_count, sender=Like)
+pre_delete.connect(decr_like_count, sender=Like)
