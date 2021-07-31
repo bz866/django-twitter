@@ -1,11 +1,12 @@
-from tweets.models import Tweet
 from accounts.api.serializers import UserSerializerForTweet
 from comments.api.serializers import CommentSerializerForTweet
-from rest_framework import serializers
 from likes.services import LikeService
-from tweets.services import TweetService
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from tweets.constants import TWEET_PHOTOS_UPLOAD_LIMIT
+from tweets.models import Tweet
+from tweets.services import TweetService
+from utils.redis_helper import RedisHelper
 
 
 class TweetSerializer(serializers.ModelSerializer):
@@ -29,17 +30,12 @@ class TweetSerializer(serializers.ModelSerializer):
         )
 
     def get_like_count(self, obj):
-        # # call like_set using like_set @property in Tweet model
-        # return obj.like_set.count()
-        # get count from denormalized count
-        return obj.like_count
+        # get count from cached and denormalized counter
+        return RedisHelper.get_count(obj, 'like_count')
 
     def get_comment_count(self, obj):
-        # # call comment_set using the comment ForeignKey in Tweet model
-        # # django default backward FOO_set retrieving objects
-        # return obj.comment_set.count()
-        # get count from denormalized count
-        return obj.comment_count
+        # get count from cached and denormalized counter
+        return RedisHelper.get_count(obj, 'comment_count')
 
     def get_has_liked(self, obj):
         user = self.context['request'].user

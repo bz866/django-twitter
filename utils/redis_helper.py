@@ -47,3 +47,67 @@ class RedisHelper:
         conn.lpush(name, serialized_object)
         # limit the cache list size
         conn.ltrim(name, 0, settings.REDIS_LIST_LENGTH_LIMIT-1)
+
+    @classmethod
+    def get_count_name(cls, obj, attr):
+        return "{class_name}{attr}:{object_id}".format(
+            class_name=obj.__class__.__name__,
+            attr=attr,
+            object_id=obj.id,
+        )
+
+    @classmethod
+    def incr_count(cls, obj, attr):
+        conn = RedisClient.get_connection()
+        name = cls.get_count_name(obj, attr)
+        # cache miss then get count from db
+        # db counter gets increment outside the RedisHelper
+        # must assure the object already has the counter attribute
+        if not conn.exists(name):
+            conn.set(name, getattr(obj, attr))
+            conn.expire(name, settings.REDIS_KEY_EXPIRE_TIME)
+            cnt = getattr(obj, attr)
+            print("NOT EXIST", cls.get_count_name(obj, attr), " ::: ", cnt)
+            return getattr(obj, attr)
+        # counter in cache, user cache built-in function to get increment
+        cnt = conn.incr(name)
+        print(cls.get_count_name(obj, attr), " ::: ", cnt)
+        return cnt
+
+    @classmethod
+    def decr_count(cls, obj, attr):
+        conn = RedisClient.get_connection()
+        name = cls.get_count_name(obj, attr)
+        # cache miss then get count from db
+        # db counter gets increment outside the RedisHelper
+        # must assure the object already has the counter attribute
+        if not conn.exists(name):
+            conn.set(name, getattr(obj, attr))
+            conn.expire(name, settings.REDIS_KEY_EXPIRE_TIME)
+            return getattr(obj, attr)
+        # counter in cache, user cache built-in function to get increment
+        return conn.decr(name)
+
+    @classmethod
+    def get_count(cls, obj, attr):
+        # conn = RedisClient.get_connection()
+        # name = cls.get_count_name(obj, attr)
+        # # cache miss, get from db
+        # if not conn.exists(name):
+        #     obj.refresh_from_db()
+        #     conn.set(name, getattr(obj, attr))
+        #     conn.expire(name, settings.REDIS_KEY_EXPIRE_TIME)
+        #     return getattr(obj, attr)
+        # cnt = conn.get(name)
+        # return int(cnt)
+        conn = RedisClient.get_connection()
+        name = cls.get_count_name(obj, attr)
+        count = conn.get(name)
+        if count is not None:
+            return int(count)
+        # cache miss, get counter from db
+        obj.refresh_from_db()
+        count = getattr(obj, attr)
+        conn.set(name, count)
+        return count
+
