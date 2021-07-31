@@ -37,6 +37,7 @@ class TweetTest(TestCase):
             self.create_tweet(self.user2, i)
             for i in range(2) # 2 tweets for user_2
         ]
+        self.user3, self.user3_client = self.create_user_and_client(username='username3')
 
     def test_list(self):
         # need user_id to list all tweets belong to a user
@@ -147,11 +148,15 @@ class TweetTest(TestCase):
             content='tweet without any comments'
         )
         # dummy comment
+        print("COMMENT1 CREATE")
+        print()
         comment1 = Comment.objects.create(
             user=self.user1,
             tweet=tweet1,
             content='original comment'
         )
+        print("COMMENT2 CREATE")
+        print()
         comment2 = Comment.objects.create(
             user=self.user2,
             tweet=tweet1,
@@ -167,13 +172,16 @@ class TweetTest(TestCase):
         self.create_like(user=self.user1, object=comment1)
         self.create_like(user=self.user2, object=comment2)
         self.create_like(user=self.user2, object=comment1)
+        # create like on tweet
+        self.create_like(user=self.user2, object=tweet1)
+        self.create_like(user=self.user3, object=tweet1)
 
         # check comment like in Tweet Retrieve
         response = self.user1_client.get(
             TWEET_RETRIEVE_URL.format(tweet1.id)
         )
-        self.assertEqual(response.data['has_liked'], False) # tweet not liked
-        self.assertEqual(response.data['like_count'], False) # tweet has no likes
+        self.assertEqual(response.data['has_liked'], False) # tweet1 not liked by user1
+        self.assertEqual(response.data['like_count'], 2) # tweet has 2 likes
         self.assertEqual(response.data['comment_count'], 2)
         response = self.user2_client.get(
             TWEET_RETRIEVE_URL.format(tweet1.id)
