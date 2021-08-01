@@ -72,6 +72,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    'EXCEPTION_HANDLER': 'utils.ratelimit.exception_handler',
 }
 
 ROOT_URLCONF = 'twitter.urls'
