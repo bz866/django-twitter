@@ -3,22 +3,18 @@ from newsfeeds.models import NewsFeed
 from utils.time_constants import ONE_HOUR
 from celery import shared_task
 from tweets.models import Tweet
+from newsfeeds.constants import FANOUT_BATCH_SIZE
 
 
 @shared_task(time_limit=ONE_HOUR)
-def fanout_to_followers_task(tweet_id):
+def fanout_to_followers_batch_task(tweet_id, follower_ids):
     from newsfeeds.services import NewsFeedService
 
-    tweet = Tweet.objects.get(id=tweet_id)
-    # get all followers of the poster
-    followers = FriendshipService().get_followers(tweet.user)
     # create newsfeed for all followers
     newsfeeds = [
-        NewsFeed(user=follower, tweet=tweet)
-        for follower in followers
+        NewsFeed(user_id=follower_id, tweet_id=tweet_id)
+        for follower_id in follower_ids
     ]
-    # the poster can see own posted tweet
-    newsfeeds.append(NewsFeed(user=tweet.user, tweet=tweet))
     # create objects by batch, more efficiency
     NewsFeed.objects.bulk_create(newsfeeds)
 
@@ -26,3 +22,36 @@ def fanout_to_followers_task(tweet_id):
     # trigger the post_save manually in iteration
     for newsfeed in newsfeeds:
         NewsFeedService.push_newsfeed_to_cache(newsfeed)
+
+    return "{} newsfeeds have been created".format(len(newsfeeds))
+
+
+@shared_task(time_limit=ONE_HOUR)
+def fanout_to_followers_main_task(tweet_id, tweet_user_id):
+    from friendships.services import FriendshipService
+    # create the newsfeed for the poster firstly
+    # ensure the poster get response asap
+    NewsFeed.objects.create(user_id=tweet_user_id, tweet_id=tweet_id)
+
+    # fanout to followers in asychronous tasks
+    follower_ids = FriendshipService.get_follower_ids(tweet_user_id)
+    index = 0
+    # batchify all asychronous tasks to reduce the size of a single task
+    # ensure robust in asychronous tasks and parallelly processing batches
+    while index < len(follower_ids):
+        batch_ids = follower_ids[index : index+FANOUT_BATCH_SIZE]
+        fanout_to_followers_batch_task(tweet_id, batch_ids)
+        index += FANOUT_BATCH_SIZE
+
+    if len(follower_ids) % FANOUT_BATCH_SIZE == 0:
+        num_batches = len(follower_ids) // FANOUT_BATCH_SIZE
+    else:
+        num_batches = len(follower_ids) // FANOUT_BATCH_SIZE + 1
+
+    return "{} newsfeeds are going to be fanout, " \
+           "{} batches created, " \
+           "batch size {}".format(
+        len(follower_ids),
+        num_batches,
+        FANOUT_BATCH_SIZE,
+    )
