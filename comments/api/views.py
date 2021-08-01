@@ -1,14 +1,16 @@
-from utils.permissions import IsObjectOwner
 from comments.api.serializers import CommentSerializer
 from comments.api.serializers import CommentSerializerForCreate
 from comments.api.serializers import CommentSerializerForUpdate
 from comments.models import Comment
+from django.utils.decorators import method_decorator
 from inbox.services import NotificationService
+from ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from utils.decorators import require_params
+from utils.permissions import IsObjectOwner
 
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -25,6 +27,8 @@ class CommentViewSet(viewsets.GenericViewSet):
             return [IsAuthenticated(),]
         return [AllowAny(),]
 
+    @method_decorator(ratelimit(key='user', rate='1/s', method='POST', block=True))
+    @method_decorator(ratelimit(key='user', rate='5/m', method='POST', block=True))
     def create(self, request, *args, **kwargs):
         data = {
             'user_id': request.user.id,
@@ -55,6 +59,7 @@ class CommentViewSet(viewsets.GenericViewSet):
         )
 
     @require_params(require_attrs='query_params', params=['tweet_id'])
+    @method_decorator(ratelimit(key='user', rate='10/s', method='GET', block=True))
     def list(self, request, *args, **kwargs):
         # filter comments by tweet_id, and order comments by created_at time
         queryset = self.get_queryset()
@@ -68,6 +73,7 @@ class CommentViewSet(viewsets.GenericViewSet):
             'comments': serializer.data,
         }, status=status.HTTP_200_OK)
 
+    @method_decorator(ratelimit(key='user', rate='3/s', method='POST', block=True))
     def update(self, request, *args, **kwargs):
         # feed the comment instance to the serializer to update
         # if not feed instance, serializer create object
@@ -95,6 +101,7 @@ class CommentViewSet(viewsets.GenericViewSet):
             status=status.HTTP_200_OK
         )
 
+    @method_decorator(ratelimit(key='user', rate='5/s', method='POST', block=True))
     def destroy(self, request, *args, **kwargs):
         comment = self.get_object()
         comment.delete()

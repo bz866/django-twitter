@@ -1,4 +1,7 @@
 from django.db.models.signals import post_save
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
+
 from newsfeeds.api.serializers import NewsFeedSerializer
 from newsfeeds.listeners import push_newsfeed_to_cache
 from newsfeeds.models import NewsFeed
@@ -16,6 +19,7 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
             return [IsAuthenticated(), ]
         return [AllowAny(), ]
 
+    @method_decorator(ratelimit(key='user', rate='5/s', method='GET', block=True))
     def list(self, request):
         cached_newsfeeds = NewsFeedService.load_newsfeeds_through_cache(
             user_id=request.user.id

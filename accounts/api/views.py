@@ -1,19 +1,21 @@
 from accounts.api.serializers import LoginSerializer
 from accounts.api.serializers import SignUpSerializer
+from accounts.api.serializers import UserProfileSerializerForUpdate
 from accounts.api.serializers import UserSerializer
+from accounts.models import UserProfile
 from django.contrib.auth import authenticate as django_authenticate
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from accounts.models import UserProfile
 from rest_framework.permissions import IsAuthenticated
-from accounts.api.serializers import UserProfileSerializerForUpdate
+from rest_framework.response import Response
 from utils.permissions import IsObjectOwner
 
 
@@ -28,6 +30,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny,]
 
     @action(methods=['POST'], detail=False)
+    @method_decorator(ratelimit(key='ip', rate='5/s', method='POST', block=True))
     def signup(self, request):
         serializer = SignUpSerializer(data=request.data)
         if not serializer.is_valid():
@@ -46,6 +49,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=False)
+    @method_decorator(ratelimit(key='ip', rate='5/s', method='POST', block=True))
     def login(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -74,6 +78,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     @action(methods=['POST'], detail=False)
+    @method_decorator(ratelimit(key='ip', rate='5/s', method='POST', block=True))
     def logout(self, request):
         if request.user.is_authenticated:
             django_logout(request)
@@ -82,6 +87,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     @action(methods=['GET'], detail=False)
+    @method_decorator(ratelimit(key='ip', rate='5/s', method='GET', block=True))
     def login_status(self, request):
         user = request.user
         if not user or user.is_anonymous:

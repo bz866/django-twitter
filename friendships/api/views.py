@@ -1,9 +1,11 @@
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
 from friendships.api.paginations import FriendShipPagination
 from friendships.api.serializers import FriendshipCreateSerializer
 from friendships.api.serializers import FriendshipFollowerSerializer
 from friendships.api.serializers import FriendshipFollowingSerializer
 from friendships.models import Friendship
+from ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -23,6 +25,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated(),]
 
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def followers(self, request, pk):
         # select out followers for a specific user
         friendships = Friendship.objects.filter(to_user_id=pk)
@@ -31,6 +34,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def followings(self, request, pk):
         # select out followings for a specific user
         friendships = Friendship.objects.filter(from_user_id=pk)
@@ -39,6 +43,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     @require_params(require_attrs='query_params', params=['type', 'user_id'])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def list(self, request):
         # list out followers and followings with Rest Framework Query Style
         # check query type
@@ -71,6 +76,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         return self.get_paginated_response(serializer.data)
 
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='POST', block=True))
     def follow(self, request, pk):
         # Friendship already existed. Return success without warning
         if Friendship.objects.filter(
@@ -100,6 +106,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
         }, status=status.HTTP_201_CREATED)
 
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
+    @method_decorator(ratelimit(key='user', rate='5/s', method='POST', block=True))
     def unfollow(self, request, pk):
         # not support unfollow yourself
         if request.user.id == int(pk):

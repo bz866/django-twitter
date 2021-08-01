@@ -1,12 +1,14 @@
-from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import ListModelMixin
-from rest_framework.permissions import IsAuthenticated
+from django.utils.decorators import method_decorator
 from inbox.api.serializers import NotificationSerializer
 from inbox.api.serializers import NotificationSerializerForUpdate
 from notifications.models import Notification
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from ratelimit.decorators import ratelimit
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 from utils.decorators import require_params
 
 
@@ -24,6 +26,7 @@ class NotificationViewSet(GenericViewSet, ListModelMixin,):
         return Notification.objects.filter(recipient=self.request.user)
 
     @action(methods=['GET'], detail=False, url_path='unread-count')
+    @method_decorator(ratelimit(key='user', rate='5/s', method='GET', block=True))
     def unread_count(self, request):
         """
         count all unread notifications of a user
@@ -35,6 +38,7 @@ class NotificationViewSet(GenericViewSet, ListModelMixin,):
         return Response({'count': count}, status=status.HTTP_200_OK)
 
     @action(methods=['PUT'], detail=False, url_path='mark-all-as-read')
+    @method_decorator(ratelimit(key='user', rate='3/s', method='PUT', block=True))
     def mark_all_as_read(self, request, *args, **kwargs):
         """
         mark all unread notifications to read if there is any
@@ -50,6 +54,7 @@ class NotificationViewSet(GenericViewSet, ListModelMixin,):
         }, status=status.HTTP_200_OK)
 
     @require_params(require_attrs='data', params=['unread'])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='PUT', block=True))
     def update(self, request, *args, **kwargs):
         notification = self.get_object()
         serializer = NotificationSerializerForUpdate(
