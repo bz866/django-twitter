@@ -41,6 +41,11 @@ class FriendshipService():
         ).exists()
 
     @classmethod
+    def get_follower_ids(cls, user_id):
+        friendships = Friendship.objects.filter(to_user_id=user_id)
+        return [f.from_user_id for f in friendships]
+
+    @classmethod
     def get_following_user_id_set(cls, from_user_id):
         key = FOLLOWING_PATTERN.format(user_id=from_user_id)
         user_id_set = cache.get(key)
