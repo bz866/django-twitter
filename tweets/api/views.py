@@ -1,3 +1,6 @@
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
+
 from tweets.models import Tweet
 from tweets.api.serializers import TweetSerializer
 from tweets.api.serializers import TweetCreateSerializer
@@ -24,6 +27,7 @@ class TweetViewSet(viewsets.GenericViewSet):
         return [IsAuthenticated(),]
 
     @require_params(require_attrs='query_params', params=['user_id'])
+    @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def list(self, request):
         # select out all tweets of a specific user
         cached_tweets = TweetService.load_tweets_through_cache(
@@ -44,6 +48,8 @@ class TweetViewSet(viewsets.GenericViewSet):
         # wrap the list of tweet contents in endless pagination
         return self.get_paginated_response(serializer.data)
 
+    @method_decorator(ratelimit(key='user', rate='1/s', method='POST', block=True))
+    @method_decorator(ratelimit(key='user', rate='10/m', method='POST', block=True))
     def create(self, request):
         serializer = TweetCreateSerializer(
             data = request.data,
@@ -67,6 +73,7 @@ class TweetViewSet(viewsets.GenericViewSet):
             'tweet': serializer.data,
         }, status=status.HTTP_201_CREATED)
 
+    @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def retrieve(self, request, *args, **kwargs):
         tweet = self.get_object()
         serializer = TweetSerializerForDetail(
