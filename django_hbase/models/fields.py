@@ -1,9 +1,9 @@
 class HBaseField:
     field_type = None
 
-    def __init__(self, *args, **kwargs):
-        self.reverse = False
-        self.column_family = None
+    def __init__(self, reverse=False, column_family=None):
+        self.reverse = reverse
+        self.column_family = column_family
         # TODO: add required=True, default=None
         # TODO: handle in HBaseModel and throw exceptions when needed
 

@@ -1,9 +1,9 @@
 from django_hbase.client import HBaseClient
 from django_hbase.models import IntegerField, TimeStampField, HBaseField
+from django.conf import settings
 
 
 class HBaseModel:
-
     class Meta:
         table_name = None
         row_keys = ()
@@ -27,15 +27,13 @@ class HBaseModel:
             column_key = column_key.decode('utf-8')
             # remove column family from column_key
             key = column_key[column_key.find(':') + 1:]
-            data[column_key] = cls.deserialize_field(key, column_value)
+            data[key] = cls.deserialize_field(key, column_value)
         return cls(**data)
 
     @classmethod
     def get_table(cls):
         conn = HBaseClient.get_connection()
-        if not cls.Meta.table_name:
-            raise NotImplementedError()
-        return conn.table(cls.Meta.table_name)
+        return conn.table(cls.get_table_name())
 
     @classmethod
     def get_field_hash(cls):
@@ -58,17 +56,16 @@ class HBaseModel:
         """
         values = []
         field_hash = cls.get_field_hash()
-        for key, field in field_hash.items():
-            # skip column_key
-            if field.column_family:
-                continue
+        for key in cls.Meta.row_keys:
+            field = field_hash[key]
             value = data.get(key)
             if not value:
                 raise BadRowKeyException(f"{key} not defined")
-            value = cls.serialize_field(field, value)
-            if ':' in value:
-                raise BadRowKeyException(f"{key} must have ':' in value {value}")
-            values.append(value)
+            serialized_value = cls.serialize_field(field, value)
+            if ':' in serialized_value:
+                raise BadRowKeyException(
+                    f"{key} must not have ':' in value {value}")
+            values.append(serialized_value)
         return bytes(':'.join(values), encoding='utf-8')
 
     @classmethod
@@ -92,7 +89,7 @@ class HBaseModel:
             if index == -1:
                 break
             data[key] = cls.deserialize_field(key, row_key[:index])
-            row_key = row_key[index+1:]
+            row_key = row_key[index + 1:]
         return data
 
     @classmethod
@@ -132,7 +129,8 @@ class HBaseModel:
         field = cls.get_field_hash()[key]
         if field.reverse:
             value = value[::-1]
-        if field.field_type in [IntegerField.field_type, TimeStampField.field_type]:
+        if field.field_type in [IntegerField.field_type,
+                                TimeStampField.field_type]:
             value = int(value)
         return value
 
@@ -157,6 +155,43 @@ class HBaseModel:
         instance = cls(**kwargs)
         instance.save()
         return instance
+
+    @classmethod
+    def get_table_name(cls):
+        if not cls.Meta.table_name:
+            raise NotImplementedError("table is not defined in HBase")
+        # seperate the test and production table names to isolate the test environment
+        if settings.TESTING:
+            return f"test_{cls.Meta.table_name}"
+        return cls.Meta.table_name
+
+    @classmethod
+    def create_table(cls):
+        if not settings.TESTING:
+            raise Exception("it not allowed to create tables "
+                            "outside the testing environment")
+
+        conn = HBaseClient.get_connection()
+        # skip if table existed
+        existed_tables = [table.decode('utf-8') for table in conn.tables()]
+        if cls.get_table_name() in existed_tables:
+            return
+        # otherwise, create new table
+        column_families = {
+            field.column_family: dict()
+            for key, field in cls.get_field_hash().items()
+            if field.column_family is not None
+        }
+        conn.create_table(name=cls.get_table_name(), families=column_families)
+
+    @classmethod
+    def drop_table(cls):
+        if not settings.TESTING:
+            raise Exception("it not allowed to delete tables "
+                            "outside the testing environment")
+
+        conn = HBaseClient.get_connection()
+        conn.delete_table(cls.get_table_name(), disable=True)
 
 
 class EmptyColumnException(Exception):

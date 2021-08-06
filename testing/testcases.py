@@ -10,9 +10,27 @@ from tweets.models import Tweet
 from friendships.models import Friendship
 from utils.redis_client import RedisClient
 from django_hbase.client import HBaseClient
+from django_hbase.models import HBaseModel
 
 
 class TestCase(DjangoTestCase):
+    hbase_tables_created = False
+
+    def setUp(self) -> None:
+        self.clear_cache()
+        try:
+            self.hbase_tables_created = True
+            for hbase_model_class in HBaseModel.__subclasses__():
+                hbase_model_class.create_table()
+        except Exception as e:
+            self.tearDown()
+            raise e
+
+    def tearDown(self) -> None:
+        if not self.hbase_tables_created:
+            return
+        for hbase_model_class in HBaseModel.__subclasses__():
+            hbase_model_class.drop_table()
 
     def clear_cache(self):
         caches['testing'].clear()

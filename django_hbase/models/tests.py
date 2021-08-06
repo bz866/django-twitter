@@ -3,6 +3,7 @@ from django_hbase.models import HBaseModel
 from utils.time_helper import utc_now
 from django_hbase.models import HBaseField, IntegerField, TimeStampField
 
+
 class HBaseModelTest(TestCase):
 
     def setUp(self) -> None:
@@ -12,8 +13,4 @@ class HBaseModelTest(TestCase):
         self.user1, self.user1_client = self.create_user_and_client(username='user1')
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
 
-    def test_serialize_row_key(self):
-        model = HBaseModel()
-        data = {
-            'from_user_id'
-        }
+
