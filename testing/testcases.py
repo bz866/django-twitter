@@ -9,6 +9,7 @@ from rest_framework.test import APIClient
 from tweets.models import Tweet
 from friendships.models import Friendship
 from utils.redis_client import RedisClient
+from django_hbase.client import HBaseClient
 
 
 class TestCase(DjangoTestCase):
@@ -16,6 +17,9 @@ class TestCase(DjangoTestCase):
     def clear_cache(self):
         caches['testing'].clear()
         RedisClient.clear()
+
+    def clear_hbase(self):
+        HBaseClient.clear_all_tables()
 
     @property
     def anonymous_client(self):
