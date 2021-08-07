@@ -106,7 +106,6 @@ class HBaseFriendshipTest(TestCase):
             from_user_id=123,
         )
         follower = HBaseFollower.get(to_user_id=456, created_at=now)
-        print("FOLLOWER: ", follower.__dict__)
         self.assertEqual(follower.from_user_id, 123)
         self.assertEqual(follower.to_user_id, 456)
         self.assertEqual(follower.created_at, now)
@@ -137,6 +136,14 @@ class HBaseFriendshipTest(TestCase):
             exception_raised = True
         self.assertEqual(exception_raised, True)
 
+        # wrong order input
+        try:
+            HBaseFollower.create(from_user_id=0, to_user_id=123, created_at=now)
+            exception_raised = False
+        except EmptyColumnException as e:
+            exception_raised = True
+        self.assertEqual(exception_raised, True)
+
         # row_key should not have ':'
         try:
             HBaseFollower.create(
@@ -149,6 +156,75 @@ class HBaseFriendshipTest(TestCase):
             exception_raised = True
             self.assertEqual(str(e), "to_user_id must not have ':' in value 456:")
         self.assertEqual(exception_raised, True)
+
+    def test_filter(self):
+        now = self.ts_now()
+        # dummy friendships
+        for i in range(1, 5):
+            HBaseFollowing.create(from_user_id=i, created_at=now, to_user_id=999)
+        for i in range(1, 4):
+            HBaseFollowing.create(from_user_id=999, created_at=now+i, to_user_id=i)
+
+        # single instance filter
+        following = HBaseFollowing.filter(start=(1, now), stop=(1, now))
+        self.assertEqual(len(following), 1)
+        self.assertEqual(following[0].from_user_id, 1)
+        self.assertEqual(following[0].to_user_id, 999)
+        self.assertEqual(following[0].created_at, now)
+
+        # start from non-exist id
+        following = HBaseFollowing.filter(start=(0, now))
+        self.assertEqual(len(following), 7)
+
+        # range query
+        followings = HBaseFollowing.filter(start=(1, now))
+        self.assertEqual(len(followings), 7)
+        followings = HBaseFollowing.filter(start=(1, now), limit=2)
+        self.assertEqual(len(followings), 2)
+        self.assertEqual(followings[0].from_user_id, 1)
+        self.assertEqual(followings[0].to_user_id, 999)
+        self.assertEqual(followings[1].from_user_id, 2)
+        self.assertEqual(followings[1].to_user_id, 999)
+
+        # reverse range query
+        followings = HBaseFollowing.filter(start=(4, now), reverse=True)
+        self.assertEqual(len(followings), 4)
+        followings = HBaseFollowing.filter(start=(4, now), limit=3, reverse=True)
+        self.assertEqual(len(followings), 3)
+        self.assertEqual(followings[-1].from_user_id, 2)
+        self.assertEqual(followings[-1].to_user_id, 999)
+        self.assertEqual(followings[0].from_user_id, 4)
+        self.assertEqual(followings[0].to_user_id, 999)
+
+        # part to row_keys range query
+        followings = HBaseFollowing.filter(start=(5, None), limit=3, reverse=True)
+        self.assertEqual(len(followings), 3)
+        self.assertEqual(followings[-1].from_user_id, 2)
+        self.assertEqual(followings[-1].to_user_id, 999)
+        self.assertEqual(followings[0].from_user_id, 4)
+        self.assertEqual(followings[0].to_user_id, 999)
+        followings = HBaseFollowing.filter(start=(4, None), limit=3, reverse=True)
+        self.assertEqual(len(followings), 3)
+        # None stays behind all values, In Table: (1, 999), (2, 299), (3, 999), ((4, None)), (4, 999)
+        self.assertEqual(followings[-1].from_user_id, 1)
+        self.assertEqual(followings[-1].to_user_id, 999)
+        self.assertEqual(followings[0].from_user_id, 3)
+        self.assertEqual(followings[0].to_user_id, 999)
+
+        # prefix range query
+        followings = HBaseFollowing.filter(prefix=(999, None), limit=4, reverse=True)
+        self.assertEqual(len(followings), 3)
+        self.assertEqual(followings[0].from_user_id, 999)
+        self.assertEqual(followings[0].to_user_id, 3)
+        self.assertEqual(followings[1].from_user_id, 999)
+        self.assertEqual(followings[1].to_user_id, 2)
+        self.assertEqual(followings[-1].from_user_id, 999)
+        self.assertEqual(followings[-1].to_user_id, 1)
+
+        # extra redundant field
+        followings = HBaseFollowing.filter(start=(1, now, None))
+        self.assertEqual(len(followings), 7)
+
 
 
 
