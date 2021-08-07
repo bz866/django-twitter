@@ -1,6 +1,7 @@
 from django_hbase.client import HBaseClient
 from django_hbase.models import IntegerField, TimeStampField, HBaseField
 from django.conf import settings
+from typing import Tuple
 
 
 class HBaseModel:
@@ -45,7 +46,7 @@ class HBaseModel:
         return field_hash
 
     @classmethod
-    def serialize_row_key(cls, data):
+    def serialize_row_key(cls, data, is_prefix=False):
         """
         serialize row_key fields in bytes as HBasa keys
 
@@ -60,7 +61,9 @@ class HBaseModel:
             field = field_hash[key]
             value = data.get(key)
             if not value:
-                raise BadRowKeyException(f"{key} not defined")
+                if not is_prefix:
+                    raise BadRowKeyException(f"{key} not defined")
+                break
             serialized_value = cls.serialize_field(field, value)
             if ':' in serialized_value:
                 raise BadRowKeyException(
@@ -192,6 +195,46 @@ class HBaseModel:
 
         conn = HBaseClient.get_connection()
         conn.delete_table(cls.get_table_name(), disable=True)
+
+    @classmethod
+    def serialize_row_key_from_tuple(cls, row_key_tuple):
+        if row_key_tuple is None:
+            return None
+
+        data = {
+            key: value
+            for key, value in zip(cls.Meta.row_keys, row_key_tuple)
+        }
+        return cls.serialize_row_key(data, is_prefix=True)
+
+    @classmethod
+    def filter(cls, start=None, stop=None, prefix=None, limit=None, reverse=False):
+        """
+        Note:
+            input as tuple to support the range query and prefix filter
+
+        Input:
+        @start(tuple): tuple of row_key values
+        @stop(tuple): tuple of row_key values
+        @prefix(tuple): a prefix of the row key that must match
+        @limit(int): max number of rows to return
+        @reverse(bool): whether to perform scan in reverse
+
+        Output:
+        List of HBase instances
+        """
+        row_start = cls.serialize_row_key_from_tuple(start)
+        row_stop = cls.serialize_row_key_from_tuple(stop)
+        row_prefix = cls.serialize_row_key_from_tuple(prefix)
+
+        table = cls.get_table()
+        rows = table.scan(row_start, row_stop, row_prefix, limit=limit, reverse=reverse)
+
+        instances = [
+            cls.init_from_row(row_key, row_data)
+            for row_key, row_data in rows
+        ]
+        return instances
 
 
 class EmptyColumnException(Exception):
