@@ -10,7 +10,7 @@ class RedisHelper:
         conn = RedisClient.get_connection()
         serialized_objects = []
         # limit the cache list size
-        for object in objects[:settings.REDIS_LIST_LENGTH_LIMIT]:
+        for object in objects:
             serialized_obj = DjangoModelSerializer.serialize(object)
             serialized_objects.append(serialized_obj)
 
@@ -20,6 +20,7 @@ class RedisHelper:
 
     @classmethod
     def load_objects(cls, name, queryset):
+        queryset = queryset[: settings.REDIS_LIST_LENGTH_LIMIT]
         conn = RedisClient.get_connection()
 
         if conn.exists(name):
@@ -37,6 +38,7 @@ class RedisHelper:
 
     @classmethod
     def push_object_to_cache(cls, name, queryset, object):
+        queryset = queryset[: settings.REDIS_LIST_LENGTH_LIMIT]
         conn = RedisClient.get_connection()
         # cache miss, load all tweets from db
         if not conn.exists(name):
