@@ -1,8 +1,10 @@
-from datetime import (
-    datetime,
-)
+from datetime import datetime
 import pytz
+import time
 
+
+def ts_now_as_int(self):
+    return int(time.time() * 1000000)
 
 def utc_now():
     return pytz.utc.localize(datetime.now())

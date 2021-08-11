@@ -45,7 +45,7 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     @require_params(require_attrs='query_params', params=['type', 'user_id'])
     @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def list(self, request):
-        # list out followers and followings with Rest Framework Query Style
+        # list out followers or followings with Rest Framework Query Style
         # check query type
         if request.query_params['type'] not in ['followers', 'followings']:
             return Response(

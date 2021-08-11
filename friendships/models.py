@@ -1,10 +1,9 @@
-from accounts.services import UserService
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import pre_delete, post_save
-from utils.listeners import invalidate_object_cache
-from utils.memcached_helpers import MemcachedHelper
 from friendships.listeners import invalidate_following_cache
+from utils.memcached_helpers import MemcachedHelper
+
 
 class Friendship(models.Model):
     from_user = models.ForeignKey(
