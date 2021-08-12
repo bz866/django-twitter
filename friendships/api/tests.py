@@ -1,8 +1,10 @@
 from django.conf import settings
 from django.core.cache import caches
-from friendships.models import Friendship
+from friendships.services import FriendshipService
+from gatekeeper.models import GateKeeper
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
+from friendships.hbase_models import HBaseFollowing
 
 cache = caches['testing'] if settings.TESTING else caches['default']
 
@@ -16,8 +18,8 @@ UNFOLLOW_URL = '/api/friendships/{}/unfollow/'
 
 class FriendshipTest(TestCase):
 
-    def setUp(self):
-        self.clear_cache()
+    def setUp(self, hbase_on=False):
+        super(FriendshipTest, self).setUp()
         # client 1
         self.user1_client = APIClient()
         self.user1 = self.create_user(
@@ -41,10 +43,10 @@ class FriendshipTest(TestCase):
         self.user3_client.force_authenticate(user=self.user3)
 
         # build friendships
-        Friendship.objects.create(from_user=self.user1, to_user=self.user2)
-        Friendship.objects.create(from_user=self.user1, to_user=self.user3)
-        Friendship.objects.create(from_user=self.user2, to_user=self.user1)
-        Friendship.objects.create(from_user=self.user3, to_user=self.user2)
+        self.create_friendship(from_user=self.user1, to_user=self.user2)
+        self.create_friendship(from_user=self.user1, to_user=self.user3)
+        self.create_friendship(from_user=self.user2, to_user=self.user1)
+        self.create_friendship(from_user=self.user3, to_user=self.user2)
 
     def test_get_followers(self):
         # only allow GET method
@@ -126,8 +128,15 @@ class FriendshipTest(TestCase):
         self.assertEqual(len(response.data['friendships']), 1)
         self.assertEqual(response.data['friendships'][0]['user']['username'], 'username1')
 
-
     def test_follow(self):
+        # test follow with MySQL
+        self._test_follow()
+        # test follow with HBase
+        self.clear_cache()
+        GateKeeper.set_kv('switch_friendship_to_hbase', 'percent', 100)
+        self._test_follow()
+
+    def _test_follow(self):
         # only allow POST method
         response = self.user2_client.get(FOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 405)
@@ -135,57 +144,78 @@ class FriendshipTest(TestCase):
         response = self.anonymous_client.post(FOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 403)
         # follow non-existed user
-        response = self.user2_client.post(FOLLOW_URL.format(999)) # user_id 999 not exists
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['errors']['message'][0], "to_user_id not exists.")
+        # user_id 999 not exists
+        response = self.user2_client.post(FOLLOW_URL.format(999))
+        self.assertEqual(response.status_code, 404)
         # not support follow myself
-        response = self.user2_client.post(FOLLOW_URL.format(self.user2.id))  # follow myself
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            response.data['errors']['message'][0],
-            'from_user_id should be different from the to_user_id.'
-        )
+        response = self.user2_client.post(FOLLOW_URL.format(self.user2.id))
+        self.assertEqual(response.status_code, 201)
         # follow
+        before_count = FriendshipService.get_following_count(self.user2.id)
         response = self.user2_client.post(FOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['success'], True)
         self.assertEqual(response.data['friendship']['from_user_id'], self.user2.id)
         self.assertEqual(response.data['friendship']['to_user_id'], self.user3.id)
-        self.assertEqual(Friendship.objects.count(), 5)
-        # re-follow
+        after_count = FriendshipService.get_following_count(self.user2.id)
+        self.assertEqual(before_count + 1, after_count)
+        # re-follow throws error
+        before_count = FriendshipService.get_following_count(self.user2.id)
         response = self.user2_client.post(FOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['success'], True)
         self.assertEqual(response.data['duplicated'], True)
-        self.assertEqual(Friendship.objects.count(), 5)
+        after_count = FriendshipService.get_following_count(self.user2.id)
+        self.assertEqual(before_count, after_count)
 
-    def test_unfollow(self):
+    def test_unfollow_in_MySQL(self):
+        # test with MySQL
+        self._test_unfollow()
+
+    def test_unfollow_in_HBase(self):
+        # TODO: format unfollow test in a more elegant way
+        # warnings: friendships are firstly created in MySQL
+        # friendships created in setup
+        # test with HBase
+        # GateKeeper.set_kv('switch_friendship_to_hbase', 'percent', 100)
+        self._test_unfollow()
+
+    def _test_unfollow(self):
         # only allow POST method
         response = self.user2_client.get(UNFOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 405)
         # anonymous client not allowed
         response = self.anonymous_client.post(UNFOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 403)
-        # unfollow non-existed user
-        response = self.user2_client.post(UNFOLLOW_URL.format(999))  # user_id 999 not exists
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data, 'Friendship not exists')
+        # unfollow non-existed user, user_id 999 not exists
+        response = self.user2_client.post(UNFOLLOW_URL.format(999))
+        self.assertEqual(response.status_code, 404)
         # not support unfollow myself
-        response = self.user2_client.post(UNFOLLOW_URL.format(self.user2.id))  # unfollow myself
+        response = self.user2_client.post(UNFOLLOW_URL.format(self.user2.id))
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['success'], False)
         self.assertEqual(response.data['message'], "You cannot unfollow yourself.")
+
+        fs = HBaseFollowing.filter()
+        for f in fs:
+            print(f.from_user_id, f.created_at, '->', f.to_user_id)
+
         # unfollow
+        before_count = FriendshipService.get_following_count(self.user2.id)
         response = self.user2_client.post(UNFOLLOW_URL.format(self.user1.id))
+        print(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['success'], True)
         self.assertEqual(int(response.data['deleted']), 1)
-        self.assertEqual(Friendship.objects.count(), 3)
+        after_count = FriendshipService.get_following_count(self.user2.id)
+        self.assertEqual(before_count - 1, after_count)
         # re-unfollow
+        before_count = FriendshipService.get_following_count(self.user2.id)
         response = self.user2_client.post(UNFOLLOW_URL.format(self.user1.id))
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data, 'Friendship not exists')
-        self.assertEqual(Friendship.objects.count(), 3)
+        after_count = FriendshipService.get_following_count(self.user2.id)
+        self.assertEqual(before_count, after_count)
 
 
 class FriendShipPaginationTest(TestCase):
@@ -196,10 +226,10 @@ class FriendShipPaginationTest(TestCase):
         self.user2, self.user2_client = self.create_user_and_client(username='user2')
         self.user3, self.user3_client = self.create_user_and_client(username='user3')
         # dummy friendship
-        Friendship.objects.create(from_user=self.user1, to_user=self.user2)
-        Friendship.objects.create(from_user=self.user2, to_user=self.user1)
-        Friendship.objects.create(from_user=self.user3, to_user=self.user1)
-        Friendship.objects.create(from_user=self.user2, to_user=self.user3)
+        self.create_friendship(from_user=self.user1, to_user=self.user2)
+        self.create_friendship(from_user=self.user2, to_user=self.user1)
+        self.create_friendship(from_user=self.user3, to_user=self.user1)
+        self.create_friendship(from_user=self.user2, to_user=self.user3)
         #          user1
         #       /*       *\\
         #     /          \\*
@@ -227,7 +257,7 @@ class FriendShipPaginationTest(TestCase):
         # multiple pages check
         for i in range(10):
             dummy_user = self.create_user(username='dummy{}'.format(i))
-            Friendship.objects.create(
+            self.create_friendship(
                 from_user=self.user1,
                 to_user=dummy_user,
             )

@@ -3,7 +3,7 @@ import pytz
 import time
 
 
-def ts_now_as_int(self):
+def ts_now_as_int():
     return int(time.time() * 1000000)
 
 def utc_now():

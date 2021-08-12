@@ -3,12 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/accounts/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/accounts/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/api/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/django_hbase/models/hbase_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/django_hbase/models/hbase_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/friendships/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/friendships/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/redis_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/redis_helper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testing/testcases.py" beforeDir="false" afterPath="$PROJECT_DIR$/testing/testcases.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/time_helper.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/time_helper.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
