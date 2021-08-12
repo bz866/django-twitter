@@ -5,6 +5,7 @@ from friendships.api.serializers import FriendshipCreateSerializer
 from friendships.api.serializers import FriendshipFollowerSerializer
 from friendships.api.serializers import FriendshipFollowingSerializer
 from friendships.models import Friendship
+from friendships.services import FriendshipService
 from ratelimit.decorators import ratelimit
 from rest_framework import status
 from rest_framework import viewsets
@@ -78,11 +79,14 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
     @method_decorator(ratelimit(key='user', rate='3/s', method='POST', block=True))
     def follow(self, request, pk):
-        # Friendship already existed. Return success without warning
-        if Friendship.objects.filter(
-            from_user_id=request.user.id,
-            to_user_id=pk,
-        ).exists():
+        # check if the user to follow exists
+        to_user = self.get_object()
+        # Friendship already existed. Raise error
+        # avoid duplicated friendships in HBase
+        if FriendshipService.has_followed(
+                from_user_id=request.user.id,
+                to_user_id=to_user.id
+        ):
             return Response({
                 'success': True,
                 'duplicated': True,
@@ -108,18 +112,19 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated])
     @method_decorator(ratelimit(key='user', rate='5/s', method='POST', block=True))
     def unfollow(self, request, pk):
+        to_user = self.get_object()
         # not support unfollow yourself
-        if request.user.id == int(pk):
+        if request.user.id == to_user.id:
             return Response({
                 'success': False,
                 'message': "You cannot unfollow yourself."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # delete the friendship
-        delete, _ = Friendship.objects.filter(
+        delete = FriendshipService.unfollow(
             from_user_id=request.user.id, # only logged in user can unfollow
-            to_user_id=pk,
-        ).delete()
+            to_user_id=to_user.id,
+        )
         # delete as the number of objects deleted
         if not delete:
             return Response('Friendship not exists', status=status.HTTP_400_BAD_REQUEST)

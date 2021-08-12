@@ -3,14 +3,16 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import ContentType
 from django.core.cache import caches
 from django.test import TestCase as DjangoTestCase
+from django_hbase.client import HBaseClient
+from django_hbase.models import HBaseModel
+from friendships.models import Friendship
+from friendships.services import FriendshipService
 from likes.models import Like
 from newsfeeds.models import NewsFeed
 from rest_framework.test import APIClient
 from tweets.models import Tweet
-from friendships.models import Friendship
 from utils.redis_client import RedisClient
-from django_hbase.client import HBaseClient
-from django_hbase.models import HBaseModel
+from gatekeeper.models import GateKeeper
 
 
 class TestCase(DjangoTestCase):
@@ -85,16 +87,11 @@ class TestCase(DjangoTestCase):
         return like
 
     def create_friendship(self, from_user, to_user):
-        friendship = Friendship.objects.create(
-            from_user=from_user,
-            to_user=to_user,
-        )
-        return friendship
+        return FriendshipService.follow(from_user_id=from_user.id, to_user_id=to_user.id)
 
     def create_newsfeed(self, user, tweet):
-        newsfeed = NewsFeed.objects.create(
+        return NewsFeed.objects.create(
             user=user,
             tweet=tweet,
         )
-        return newsfeed
-      
+

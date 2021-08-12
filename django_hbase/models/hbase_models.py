@@ -236,6 +236,12 @@ class HBaseModel:
         ]
         return instances
 
+    @classmethod
+    def delete(cls, **kwargs):
+        row_key = cls.serialize_row_key(kwargs)
+        table = cls.get_table()
+        table.delete(row=row_key)
+
 
 class EmptyColumnException(Exception):
     pass
