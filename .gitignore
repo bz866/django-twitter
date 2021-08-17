@@ -9,6 +9,8 @@ jdk-8u301-linux-x64.tar.gz
 thrift-0.14.2.tar.gz
 thrift-0.14.2/
 
+.idea/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

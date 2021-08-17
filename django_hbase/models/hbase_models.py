@@ -221,7 +221,7 @@ class HBaseModel:
         @reverse(bool): whether to perform scan in reverse
 
         Output:
-        List of HBase instances
+        List of HBaseModel instances
         """
         row_start = cls.serialize_row_key_from_tuple(start)
         row_stop = cls.serialize_row_key_from_tuple(stop)

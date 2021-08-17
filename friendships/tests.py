@@ -4,6 +4,7 @@ from friendships.services import FriendshipService
 from friendships.hbase_models import HBaseFollowing, HBaseFollower
 import time
 from django_hbase.models import BadRowKeyException, EmptyColumnException
+from gatekeeper.models import GateKeeper
 
 
 class FriendShipServiceTest(TestCase):

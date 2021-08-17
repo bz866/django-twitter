@@ -2,9 +2,10 @@ from django.conf import settings
 from django.core.cache import caches
 from friendships.services import FriendshipService
 from gatekeeper.models import GateKeeper
-from rest_framework.test import APIClient
 from testing.testcases import TestCase
 from friendships.hbase_models import HBaseFollowing
+from utils.time_helper import ts_now_as_int
+from utils.paginations import EndlessPagination
 
 cache = caches['testing'] if settings.TESTING else caches['default']
 
@@ -18,37 +19,22 @@ UNFOLLOW_URL = '/api/friendships/{}/unfollow/'
 
 class FriendshipTest(TestCase):
 
-    def setUp(self, hbase_on=False):
+    def setUp(self):
         super(FriendshipTest, self).setUp()
-        # client 1
-        self.user1_client = APIClient()
-        self.user1 = self.create_user(
-            username='username1',
-            password='defaultpw',
-        )
-        self.user1_client.force_authenticate(user=self.user1)
-        # client 2
-        self.user2_client = APIClient()
-        self.user2 = self.create_user(
-            username='username2',
-            password='defaultpw',
-        )
-        self.user2_client.force_authenticate(user=self.user2)
-        # client 3
-        self.user3_client = APIClient()
-        self.user3 = self.create_user(
-            username='username3',
-            password='defaultpw',
-        )
-        self.user3_client.force_authenticate(user=self.user3)
+        # dummy users
+        self.user1, self.user1_client = self.create_user_and_client(username='username1')
+        self.user2, self.user2_client = self.create_user_and_client(username='username2')
+        self.user3, self.user3_client = self.create_user_and_client(username='username3')
 
-        # build friendships
+    def _create_dummy_friendship(self):
+        # dummy friendships
         self.create_friendship(from_user=self.user1, to_user=self.user2)
         self.create_friendship(from_user=self.user1, to_user=self.user3)
         self.create_friendship(from_user=self.user2, to_user=self.user1)
         self.create_friendship(from_user=self.user3, to_user=self.user2)
 
     def test_get_followers(self):
+        self._create_dummy_friendship()
         # only allow GET method
         response = self.user1_client.post(FOLLOWERS_URL.format(self.user1.id))
         self.assertEqual(response.status_code, 405)
@@ -67,6 +53,7 @@ class FriendshipTest(TestCase):
         self.assertEqual(response.data['friendships'][1]['user']['username'], 'username1')
 
     def test_get_followings(self):
+        self._create_dummy_friendship()
         # only allow GET method
         response = self.user1_client.post(FOLLOWINGS_URL.format(self.user1.id))
         self.assertEqual(response.status_code, 405)
@@ -81,6 +68,7 @@ class FriendshipTest(TestCase):
         self.assertEqual(response.data['friendships'][1]['user']['username'], 'username2')
 
     def test_list_followers_and_followings(self):
+        self._create_dummy_friendship()
         # only allow GET method
         response = self.user1_client.post(
             LIST_FOLLOWERS_URL,
@@ -137,6 +125,7 @@ class FriendshipTest(TestCase):
         self._test_follow()
 
     def _test_follow(self):
+        self._create_dummy_friendship()
         # only allow POST method
         response = self.user2_client.get(FOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 405)
@@ -173,14 +162,12 @@ class FriendshipTest(TestCase):
         self._test_unfollow()
 
     def test_unfollow_in_HBase(self):
-        # TODO: format unfollow test in a more elegant way
-        # warnings: friendships are firstly created in MySQL
-        # friendships created in setup
         # test with HBase
-        # GateKeeper.set_kv('switch_friendship_to_hbase', 'percent', 100)
+        GateKeeper.set_kv('switch_friendship_to_hbase', 'percent', 100)
         self._test_unfollow()
 
     def _test_unfollow(self):
+        self._create_dummy_friendship()
         # only allow POST method
         response = self.user2_client.get(UNFOLLOW_URL.format(self.user3.id))
         self.assertEqual(response.status_code, 405)
@@ -195,15 +182,9 @@ class FriendshipTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['success'], False)
         self.assertEqual(response.data['message'], "You cannot unfollow yourself.")
-
-        fs = HBaseFollowing.filter()
-        for f in fs:
-            print(f.from_user_id, f.created_at, '->', f.to_user_id)
-
         # unfollow
         before_count = FriendshipService.get_following_count(self.user2.id)
         response = self.user2_client.post(UNFOLLOW_URL.format(self.user1.id))
-        print(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['success'], True)
         self.assertEqual(int(response.data['deleted']), 1)
@@ -326,3 +307,194 @@ class FriendShipPaginationTest(TestCase):
         self.assertEqual(len(response_friendships), 1)
         self.assertEqual(response_friendships[0]['user']['id'], self.user1.id)
         self.assertTrue(response_friendships[0]['has_followed'])
+
+
+class FriendshipPaginationTest(TestCase):
+    # TODO: HBase test is way to slow
+
+    def setUp(self) -> None:
+        super(FriendshipPaginationTest, self).setUp()
+        GateKeeper.set_kv('switch_friendship_to_hbase', 'percent', 100)
+        self.linghu, self.linghu_client = self.create_user_and_client(username='linghu')
+        self.dongxie, self.dongxie_client = self.create_user_and_client(username='dongxie')
+
+        # create followings and followers for dongxie
+        for i in range(2):
+            follower = self.create_user('dongxie_follower{}'.format(i))
+            self.create_friendship(from_user=follower, to_user=self.dongxie)
+        for i in range(3):
+            following = self.create_user('dongxie_following{}'.format(i))
+            self.create_friendship(from_user=self.dongxie, to_user=following)
+
+    # def _paginate_to_get_friendships(self, client, url):
+    #     response = client.get(url)
+    #     friendships = response.data['results']
+    #     while response.data['has_next_page']:
+    #         response = client.get(url, {
+    #             'created_at__lt': friendships[-1]['created_at']
+    #         })
+    #         friendships.extend(response.data['results'])
+    #     return friendships
+    #
+    # def _test_followings_pagination(self):
+    #     self.user1, self.user1_client = self.create_user_and_client(username='user1')
+    #     self.user2, self.user2_client = self.create_user_and_client(username='user2')
+    #     user2_followings = []
+    #     for i in range(31, 61):
+    #         user2_followings.append(
+    #             self.create_friendship(
+    #                 from_user=self.user2,
+    #                 to_user=self.create_user(username=f'user{i}'),
+    #             )
+    #         )
+    #         user2_followings = user2_followings[::-1]
+    #
+    #     paginate_followings = self._paginate_to_get_friendships(
+    #         client=self.user1_client,
+    #         url=FOLLOWINGS_URL.format(self.user2.id),
+    #     )
+    #     self.assertEqual(len(user2_followings), len(paginate_followings))
+    #     for i in range(len(user2_followings)):
+    #         self.assertEqual(user2_followings[i].from_user_id, paginate_followings[i]['from_user_id'])
+    #         self.assertEqual(user2_followings[i].to_user_id, paginate_followings[i]['to_user_id'])
+    #         self.assertEqual(user2_followings[i].created_at, paginate_followings[i]['created_at'])
+    #
+    #     # new friendship
+    #     new_user2_followings = []
+    #     for i in range(61, 71):
+    #         new_user2_followings.append(
+    #             self.create_friendship(
+    #                 from_user=self.user2,
+    #                 to_user=self.create_user(username=f'user{i}'),
+    #             )
+    #         )
+    #         new_user2_followings = new_user2_followings[::-1]
+    #     paginate_followings = self.user1_client.get(
+    #         FOLLOWINGS_URL.format(self.user2.id),
+    #         {'created_at__gt': user2_followings[0].created_at}
+    #     )
+    #     self.assertEqual(len(new_user2_followings), len(paginate_followings))
+    #     for i in range(len(new_user2_followings)):
+    #         self.assertEqual(new_user2_followings[i].from_user_id, paginate_followings[i]['from_user_id'])
+    #         self.assertEqual(new_user2_followings[i].to_user_id, paginate_followings[i]['to_user_id'])
+    #         self.assertEqual(new_user2_followings[i].created_at, paginate_followings[i]['created_at'])
+    #
+    # def test_friendship_pagination(self):
+    #     self._test_followings_pagination()
+
+    def test_followers(self):
+        url = FOLLOWERS_URL.format(self.dongxie.id)
+        # post is not allowed
+        response = self.anonymous_client.post(url)
+        self.assertEqual(response.status_code, 405)
+        # get is ok
+        response = self.anonymous_client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 2)
+        # 确保按照时间倒序
+        ts0 = response.data['results'][0]['created_at']
+        ts1 = response.data['results'][1]['created_at']
+        self.assertEqual(ts0 > ts1, True)
+        self.assertEqual(
+            response.data['results'][0]['user']['username'],
+            'dongxie_follower1',
+        )
+        self.assertEqual(
+            response.data['results'][1]['user']['username'],
+            'dongxie_follower0',
+        )
+
+    def test_followers_pagination(self):
+        page_size = EndlessPagination.page_size
+        friendships = []
+        for i in range(page_size * 2):
+            follower = self.create_user('linghu_follower{}'.format(i))
+            friendship = self.create_friendship(from_user=follower,
+                                                to_user=self.linghu)
+            friendships.append(friendship)
+            if follower.id % 2 == 0:
+                self.create_friendship(from_user=self.dongxie, to_user=follower)
+
+        url = FOLLOWERS_URL.format(self.linghu.id)
+        self._paginate_until_the_end(url, 2, friendships)
+
+        # anonymous hasn't followed any users
+        response = self.anonymous_client.get(url)
+        for result in response.data['results']:
+            self.assertEqual(result['has_followed'], False)
+
+        # dongxie has followed users with even id
+        response = self.dongxie_client.get(url)
+        for result in response.data['results']:
+            has_followed = (result['user']['id'] % 2 == 0)
+            self.assertEqual(result['has_followed'], has_followed)
+
+    def test_followings_pagination(self):
+        page_size = EndlessPagination.page_size
+        friendships = []
+        for i in range(page_size * 2):
+            following = self.create_user('linghu_following{}'.format(i))
+            friendship = self.create_friendship(from_user=self.linghu,
+                                                to_user=following)
+            friendships.append(friendship)
+            if following.id % 2 == 0:
+                self.create_friendship(from_user=self.dongxie,
+                                       to_user=following)
+
+        url = FOLLOWINGS_URL.format(self.linghu.id)
+        self._paginate_until_the_end(url, 2, friendships)
+
+        # anonymous hasn't followed any users
+        response = self.anonymous_client.get(url)
+        for result in response.data['results']:
+            self.assertEqual(result['has_followed'], False)
+
+        # dongxie has followed users with even id
+        response = self.dongxie_client.get(url)
+        for result in response.data['results']:
+            has_followed = (result['user']['id'] % 2 == 0)
+            self.assertEqual(result['has_followed'], has_followed)
+
+        # linghu has followed all his following users
+        response = self.linghu_client.get(url)
+        for result in response.data['results']:
+            self.assertEqual(result['has_followed'], True)
+
+        # test pull new friendships
+        last_created_at = friendships[-1].created_at
+        response = self.linghu_client.get(url,
+                                          {'created_at__gt': last_created_at})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['results']), 0)
+
+        new_friends = [self.create_user('big_v{}'.format(i)) for i in range(3)]
+        new_friendships = []
+        for friend in new_friends:
+            new_friendships.append(
+                self.create_friendship(from_user=self.linghu, to_user=friend))
+        response = self.linghu_client.get(url,
+                                          {'created_at__gt': last_created_at})
+        self.assertEqual(len(response.data['results']), 3)
+        for result, friendship in zip(response.data['results'],
+                                      reversed(new_friendships)):
+            self.assertEqual(result['created_at'], friendship.created_at)
+
+    def _paginate_until_the_end(self, url, expect_pages, friendships):
+        results, pages = [], 0
+        response = self.anonymous_client.get(url)
+        results.extend(response.data['results'])
+        pages += 1
+        while response.data['has_next_page']:
+            self.assertEqual(response.status_code, 200)
+            last_item = response.data['results'][-1]
+            response = self.anonymous_client.get(url, {
+                'created_at__lt': last_item['created_at'],
+            })
+            results.extend(response.data['results'])
+            pages += 1
+
+        self.assertEqual(len(results), len(friendships))
+        self.assertEqual(pages, expect_pages)
+        # friendship is in ascending order, results is in descending order
+        for result, friendship in zip(results, friendships[::-1]):
+            self.assertEqual(result['created_at'], friendship.created_at)

@@ -3,13 +3,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from dateutil import parser
 from django.conf import settings
+from utils.time_constants import MAX_TIMESTAMP
 
 
 class EndlessPagination(pagination.BasePagination):
+    page_size = 20
 
     def __init__(self):
+        super(EndlessPagination, self).__init__()
         self.has_next_page = False
-        self.page_size = 20
 
     def _paginate_ordered_list(self, reversed_list, request):
         if 'created_at__gt' in request.query_params:
@@ -73,3 +75,47 @@ class EndlessPagination(pagination.BasePagination):
 
     def to_html(self):
         pass
+
+    def paginate_hbase(self, hbase_model_class, row_prefix, request):
+        if 'created_at__gt' in request.query_params:
+            created_at__gt = request.query_params['created_at__gt']
+            start = (*row_prefix, created_at__gt)
+            stop = (*row_prefix, MAX_TIMESTAMP)
+            objects = hbase_model_class.filter(start=start, stop=stop)
+            if len(objects) and objects[0].created_at == created_at__gt:
+                objects = objects[:0:-1]
+            else:
+                objects = objects[::-1]
+            self.has_next_page = False
+            return objects
+
+        elif 'created_at__lt' in request.query_params:
+            created_at__lt = request.query_params['created_at__lt']
+            start = (*row_prefix, created_at__lt)
+            stop = (*row_prefix, None)
+            objects = hbase_model_class.filter(
+                start=start,
+                stop=stop,
+                limit=self.page_size+2,
+                reverse=True
+            )
+            if len(objects) and objects[0].created_at == created_at__lt:
+                objects = objects[1:]
+            else:
+                objects = objects[:-1]
+            if len(objects) > self.page_size:
+                self.has_next_page = True
+                objects = objects[:-1]
+            else:
+                self.has_next_page = False
+
+        # no time params in request
+        prefix = (*row_prefix, None)
+        objects = hbase_model_class.filter(prefix=prefix, limit=self.page_size+1, reverse=True)
+        if len(objects) > self.page_size:
+            self.has_next_page = True
+            objects = objects[:-1]
+        else:
+            self.has_next_page = False
+        return objects
+
