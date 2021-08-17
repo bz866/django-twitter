@@ -13,12 +13,15 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from utils.decorators import require_params
+from utils.paginations import EndlessPagination
+from friendships.hbase_models import HBaseFollower, HBaseFollowing
+from gatekeeper.models import GateKeeper
 
 
 class FriendshipViewSet(viewsets.GenericViewSet):
     serializer_class = FriendshipCreateSerializer
     queryset = User.objects.all()
-    pagination_class = FriendShipPagination
+    pagination_class = EndlessPagination
 
     def get_permissions(self):
         if self.action == 'list':
@@ -28,18 +31,26 @@ class FriendshipViewSet(viewsets.GenericViewSet):
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
     @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def followers(self, request, pk):
+        paginator = self.paginator
         # select out followers for a specific user
-        friendships = Friendship.objects.filter(to_user_id=pk)
-        page = self.paginate_queryset(friendships)
+        if GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            page = paginator.paginate_hbase(HBaseFollower, (pk, ), request)
+        else:
+            friendships = Friendship.objects.filter(to_user_id=pk)
+            page = paginator.paginate_queryset(friendships)
         serializer = FriendshipFollowerSerializer(page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(methods=['GET'], detail=True, permission_classes=[AllowAny])
     @method_decorator(ratelimit(key='user', rate='3/s', method='GET', block=True))
     def followings(self, request, pk):
+        paginator = self.paginator
         # select out followings for a specific user
-        friendships = Friendship.objects.filter(from_user_id=pk)
-        page = self.paginate_queryset(friendships)
+        if GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            page = paginator.paginate_hbase(HBaseFollowing, (pk,), request)
+        else:
+            friendships = Friendship.objects.filter(from_user_id=pk)
+            page = paginator.paginate_queryset(friendships)
         serializer = FriendshipFollowingSerializer(page, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
 
