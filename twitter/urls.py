@@ -43,5 +43,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
+    path('inbox/notifications/', include(notifications.urls, namespace='notifications')),
 ]

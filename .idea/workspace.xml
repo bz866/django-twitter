@@ -4,12 +4,11 @@
     <list default="true" id="d0b95770-f400-4bd7-8722-22b2d0399ce5" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/django_hbase/models/hbase_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/django_hbase/models/hbase_models.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/friendships/api/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/tests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/friendships/api/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/api/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/friendships/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/friendships/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/friendships/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/twitter/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/twitter/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/paginations.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/paginations.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/time_constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/time_constants.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -189,6 +188,7 @@
       <workItem from="1624023114678" duration="5302000" />
       <workItem from="1624729324518" duration="8134000" />
       <workItem from="1627590438206" duration="9350000" />
+      <workItem from="1630153709406" duration="319000" />
     </task>
     <servers />
   </component>

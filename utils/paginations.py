@@ -89,7 +89,7 @@ class EndlessPagination(pagination.BasePagination):
             self.has_next_page = False
             return objects
 
-        elif 'created_at__lt' in request.query_params:
+        if 'created_at__lt' in request.query_params:
             created_at__lt = request.query_params['created_at__lt']
             start = (*row_prefix, created_at__lt)
             stop = (*row_prefix, None)
@@ -102,12 +102,13 @@ class EndlessPagination(pagination.BasePagination):
             if len(objects) and objects[0].created_at == created_at__lt:
                 objects = objects[1:]
             else:
-                objects = objects[:-1]
+                objects = objects[1:]
             if len(objects) > self.page_size:
                 self.has_next_page = True
                 objects = objects[:-1]
             else:
                 self.has_next_page = False
+            return objects
 
         # no time params in request
         prefix = (*row_prefix, None)

@@ -49,7 +49,10 @@ class FriendshipService():
         if user_id_set is not None:
             return user_id_set
         # set doesn't exist in cache, build one from the DB
-        friendships = Friendship.objects.filter(from_user_id=from_user_id)
+        if GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            friendships = HBaseFollowing.filter(prefix=(from_user_id, None))
+        else:
+            friendships = Friendship.objects.filter(from_user_id=from_user_id)
         user_id_set = set([
             fs.to_user_id
             for fs in friendships
